@@ -1,0 +1,11 @@
+@baseUrl = https://localhost:5001
+@orderId = A4FC4AD1-671D-465F-ADE5-5EED5779A4D8
+
+### Submit Order
+POST {{baseUrl}}/order
+Content-Type: application/x-www-form-urlencoded
+
+Id={{orderId}}&CustomerNumber=CUST-123&PaymentCardNumber=5999-1234-5678-9012&Notes=Test+order
+
+### Accept Order
+PATCH {{baseUrl}}/order/{{orderId}}/accept

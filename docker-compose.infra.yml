@@ -1,0 +1,65 @@
+services:
+  rabbitmq:
+    image: masstransit/rabbitmq:latest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+      - "15692:15692"
+    tmpfs:
+      - /var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  mongo:
+    image: mongo:7
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  sqlserver:
+    image: masstransit/sqlserver-quartz:latest
+    ports:
+      - "1433:1433"
+
+  quartz:
+    image: masstransit/quartz:latest
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      sqlserver:
+        condition: service_started
+    environment:
+      MT_Scheduler: quartz
+      MT_Quartz__ConnectionString: "Server=tcp:sqlserver;Database=quartznet;Persist Security Info=False;User ID=sa;Password=Quartz!DockerP4ss;Encrypt=False;TrustServerCertificate=True;"
+
+  seq:
+    image: datalust/seq:latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SEQ_FIRSTRUN_NOAUTHENTICATION=true
+    ports:
+      - "5341:5341"
+      - "8082:80"
+    tmpfs:
+      - /data
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - "16686:16686"   # Web UI
+      - "4317:4317"     # OTLP gRPC
+      - "4318:4318"     # OTLP HTTP
+
+volumes:
+  mongo-data:
