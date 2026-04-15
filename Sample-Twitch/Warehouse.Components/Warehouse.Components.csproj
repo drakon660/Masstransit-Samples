@@ -9,12 +9,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="MassTransit" Version="8.5.8" />
-    <PackageReference Include="MassTransit.Analyzers" Version="8.5.8">
+    <PackageReference Include="MassTransit" />
+    <PackageReference Include="MassTransit.Analyzers">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="MassTransit.MongoDb" Version="8.5.8" />
+    <PackageReference Include="MassTransit.MongoDb" />
   </ItemGroup>
 
 </Project>

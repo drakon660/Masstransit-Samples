@@ -17,6 +17,7 @@ using MongoDB.Bson.Serialization.Serializers;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Sample.Components.BatchConsumers;
+using Sample.Components.OutboxTest;
 using Sample.Infrastructure;
 using Serilog;
 using Serilog.Events;
@@ -64,6 +65,8 @@ builder.Services.AddMassTransit(cfg =>
 {
     cfg.DisableUsageTelemetry();
     cfg.AddConsumersFromNamespaceContaining<SubmitOrderConsumer>();
+    cfg.AddConsumer<OutBoxConsumer, OutBoxConsumerDefinition>();
+    cfg.AddConsumer<OutBoxClientConsumer>();
     cfg.AddActivitiesFromNamespaceContaining<AllocateInventoryActivity>();
     cfg.AddSagaStateMachine<OrderStateMachine, OrderState>(typeof(OrderStateMachineDefinition))
         .MongoDbRepository(r =>

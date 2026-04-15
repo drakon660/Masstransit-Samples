@@ -2,7 +2,12 @@
   "permissions": {
     "allow": [
       "Bash(dotnet build:*)",
-      "Bash(timeout 5 dotnet run --no-build)"
+      "Bash(timeout 5 dotnet run --no-build)",
+      "WebFetch(domain:masstransit.io)",
+      "WebFetch(domain:masstransit.massient.com)",
+      "WebSearch",
+      "Bash(gh api:*)",
+      "WebFetch(domain:github.com)"
     ]
   }
 }

@@ -10,10 +10,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="MassTransit" Version="8.5.8" />
-<!--    <PackageReference Include="MassTransit.MongoDb" Version="8.5.8" />-->
-    <PackageReference Include="MassTransit.Redis" Version="8.5.8" />
-    <PackageReference Include="MongoDB.Bson" Version="3.7.1" />
+    <PackageReference Include="MassTransit" />
+<!--    <PackageReference Include="MassTransit.MongoDb" />-->
+    <PackageReference Include="MassTransit.Redis" />
+    <PackageReference Include="MongoDB.Bson" />
   </ItemGroup>
 
 </Project>

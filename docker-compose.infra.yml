@@ -14,7 +14,7 @@ services:
       retries: 10
 
   mongo:
-    image: mongo:7
+    image: mongo:8
     ports:
       - "27018:27017"
     volumes:
@@ -23,7 +23,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "6381:6379"
 
   sqlserver:
     image: masstransit/sqlserver-quartz:latest
