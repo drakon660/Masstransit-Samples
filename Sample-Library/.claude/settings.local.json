@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet restore:*)",
+      "Bash(dotnet build *)",
+      "WebFetch(domain:masstransit.io)",
+      "WebFetch(domain:masstransit.massient.com)"
+    ]
+  }
+}
