@@ -2,6 +2,7 @@
 using Library.Components.StateMachines;
 using Library.Contracts;
 using MassTransit;
+using MassTransit.QuartzIntegration;
 using MassTransit.Testing;
 using Meziantou.Extensions.Logging.Xunit.v3;
 using Microsoft.Extensions.DependencyInjection;
@@ -104,6 +105,61 @@ public class ReservationStateMachineTests(ITestOutputHelper output)
         existsId.Should().NotBeEmpty("Saga instance not found");
 
         existsId = await bookSagaHarness.Exists(bookId, x => x.Reserved);
+        existsId.Should().NotBeEmpty("Saga instance not found");
+    }
+    
+    [Fact]
+    public async Task When_Reservation_Expires_Should_Mark_Book_As_Available()
+    {
+        await using var provider = new ServiceCollection()
+            .ConfigureMassTransit(x =>
+            {
+                x.AddSagaStateMachine<ReservationStateMachine, Reservation>();
+                x.AddSagaStateMachine<BookStateMachine, Book>();
+            })
+            .BuildServiceProvider(true);
+
+        var harness = provider.GetTestHarness();
+
+        await harness.Start();
+        
+        var reservationSagaHarness = harness.GetSagaStateMachineHarness<ReservationStateMachine, Reservation>();
+        var bookSagaHarness = harness.GetSagaStateMachineHarness<BookStateMachine, Book>();
+        
+        var reservationId = NewId.NextGuid();
+        var bookId = NewId.NextGuid();
+        var memberId = NewId.NextGuid();
+
+        await harness.Bus.Publish<BookAdded>(new
+        {
+            BookId = bookId,
+            Isbn = "0307969959",
+            Title = "Neuromancer"
+        }, TestContext.Current.CancellationToken);
+        
+        Guid? existsId = await bookSagaHarness.Exists(bookId, x => x.Available);
+        existsId.Should().NotBeEmpty("Saga instance not found");
+        
+        await harness.Bus.Publish<ReservationRequested>(new
+        {
+            ReservationId = reservationId,
+            InVar.Timestamp,
+            MemberId = memberId,
+            BookId = bookId,
+        }, TestContext.Current.CancellationToken);
+        
+        existsId = await reservationSagaHarness.Exists(reservationId, x => x.Requested);
+        
+        existsId.Should().NotBeEmpty("Saga instance not found");
+        
+        using var adjustment = new QuartzTimeAdjustment(provider);
+
+        await adjustment.AdvanceTime(TimeSpan.FromHours(24));
+
+        var notExists = await reservationSagaHarness.NotExists(reservationId);
+        notExists.Should().BeNull();
+        
+        existsId = await bookSagaHarness.Exists(bookId, x => x.Available);
         existsId.Should().NotBeEmpty("Saga instance not found");
     }
 }

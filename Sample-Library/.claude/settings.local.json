@@ -4,7 +4,8 @@
       "Bash(dotnet restore:*)",
       "Bash(dotnet build *)",
       "WebFetch(domain:masstransit.io)",
-      "WebFetch(domain:masstransit.massient.com)"
+      "WebFetch(domain:masstransit.massient.com)",
+      "Bash(dotnet test *)"
     ]
   }
 }

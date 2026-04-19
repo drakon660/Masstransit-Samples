@@ -11,6 +11,7 @@
         <PackageReference Include="AwesomeAssertions" />
         <PackageReference Include="coverlet.collector"/>
         <PackageReference Include="MassTransit.TestFramework" />
+        <PackageReference Include="MassTransit.Quartz" />
         <PackageReference Include="Meziantou.Extensions.Logging.Xunit.v3" />
         <PackageReference Include="Microsoft.Extensions.Logging" />
         <PackageReference Include="Microsoft.NET.Test.Sdk"/>

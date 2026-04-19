@@ -12,7 +12,9 @@ public class BookStateMachine : MassTransitStateMachine<Book>
         Event(() => Added, x => x.CorrelateById(m => m.Message.BookId));
         Event(() => ReservationRequested, x =>
             x.CorrelateById(m => m.Message.BookId));
-
+        Event(() => ReservationExpired, x =>
+            x.CorrelateById(m => m.Message.BookId));
+        
         InstanceState(x => x.CurrentState);
 
         Initially(When(Added).Then(UpdateSagaFromMessage).TransitionTo(Available));
@@ -25,13 +27,17 @@ public class BookStateMachine : MassTransitStateMachine<Book>
                 MemberId = context.Message.MemberId,
                 BookId = context.Message.BookId,
             }
-        )));
+        )).TransitionTo(Reserved));
+        
+        During(Reserved,
+            When(ReservationExpired).TransitionTo(Available));
     }
 
     public State Available { get; set; }
     public State Reserved { get; set; }
     public Event<BookAdded> Added { get; set; }
     public Event<ReservationRequested> ReservationRequested { get; set; }
+    public Event<ReservationCancelled> ReservationExpired { get; set; }
 
     private void UpdateSagaFromMessage(BehaviorContext<Book, BookAdded> saga)
     {

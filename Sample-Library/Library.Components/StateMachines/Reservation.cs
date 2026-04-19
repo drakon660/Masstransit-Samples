@@ -10,4 +10,6 @@ public class Reservation : SagaStateMachineInstance
     public DateTime? Reserved { get; set; }
     public int CurrentState { get; set; }
     public Guid BookId { get; set; }
+    
+    public Guid? ExpirationTokenId { get; set; }
 }

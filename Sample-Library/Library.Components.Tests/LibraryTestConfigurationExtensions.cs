@@ -1,5 +1,6 @@
 ﻿using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
+using Quartz;
 
 namespace Library.Components.Tests;
 
@@ -7,12 +8,12 @@ public static class LibraryTestConfigurationExtensions
 {
     public static IServiceCollection ConfigureMassTransit(this IServiceCollection services, Action<IBusRegistrationConfigurator>? configure = null)
     {
-        services
+        services.AddQuartz()
             .AddMassTransitTestHarness(x =>
             {
                 x.SetKebabCaseEndpointNameFormatter();
 
-                //x.AddQuartzConsumers();
+                x.AddQuartzConsumers();
 
                 x.AddPublishMessageScheduler();
 
