@@ -1,6 +1,6 @@
 ﻿namespace Library.Contracts;
 
-public interface ReservationCancelled
+public interface BookReservationCancelled
 {
     Guid ReservationId { get; set; }
     Guid BookId { get; set; }

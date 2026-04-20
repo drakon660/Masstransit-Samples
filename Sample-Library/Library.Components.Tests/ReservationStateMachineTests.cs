@@ -107,10 +107,13 @@ public class ReservationStateMachineTests
         
         await AssertReservationState(reservationSagaHarness, reservationId, x => x.Requested, "Saga instance not found");
         
+        await AssertBookState(bookSagaHarness, bookId, x => x.Reserved, "Saga instance not found");
+        
         using var adjustment = new QuartzTimeAdjustment(provider);
-
+        
         await AdvanceTime(adjustment, TimeSpan.FromHours(24));
-        await AssertReservationExpired(harness, bookSagaHarness);
+
+        await AssertConsumedByReservationSaga<ReservationExpired>(reservationSagaHarness, "dupa");
         await AssertReservationRemoved(reservationSagaHarness, reservationId);
         await AssertBookState(bookSagaHarness, bookId, x => x.Available, "Saga instance not found");
     }
@@ -155,7 +158,7 @@ public class ReservationStateMachineTests
             "Reservation should still be reserved before the two day duration elapses");
 
         await AdvanceTime(adjustment, TimeSpan.FromHours(24));
-        await AssertReservationExpired(harness, bookSagaHarness);
+        await AssertReservationCancelled(harness, bookSagaHarness);
         await AssertReservationRemoved(reservationSagaHarness, reservationId);
         await AssertBookState(bookSagaHarness, bookId, x => x.Available, "Saga instance not found");
     }
@@ -221,15 +224,15 @@ public class ReservationStateMachineTests
             BookId = bookId,
         }, TestContext.Current.CancellationToken);
 
-    private static async Task AssertReservationExpired(
+    private static async Task AssertReservationCancelled(
         ITestHarness harness,
         ISagaStateMachineTestHarness<BookStateMachine, Book> bookSagaHarness)
     {
-        (await harness.Published.Any<ReservationExpired>(TestContext.Current.CancellationToken))
-            .Should().BeTrue("Reservation expiration should have been published");
+        (await harness.Published.Any<BookReservationCancelled>(TestContext.Current.CancellationToken))
+            .Should().BeTrue("Reservation cancellation should have been published");
 
-        (await bookSagaHarness.Consumed.Any<ReservationExpired>(TestContext.Current.CancellationToken))
-            .Should().BeTrue("Book saga should have consumed the expiration message");
+        (await bookSagaHarness.Consumed.Any<BookReservationCancelled>(TestContext.Current.CancellationToken))
+            .Should().BeTrue("Book saga should have consumed the reservation cancellation message");
     }
 
     private static async Task AssertReservationRemoved(

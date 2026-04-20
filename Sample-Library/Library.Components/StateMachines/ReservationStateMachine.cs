@@ -9,7 +9,11 @@ public class ReservationStateMachine : MassTransitStateMachine<Reservation>
     {
         Event(() => ReservationRequested, x 
             => x.CorrelateById(m => m.Message.ReservationId));
+        
         Event(() => BookReserved, x 
+            => x.CorrelateById(m => m.Message.ReservationId));
+        
+        Event(() => ReservationCancellationRequested, x 
             => x.CorrelateById(m => m.Message.ReservationId));
         
         // Schedule<Reservation, ReservationExpired> already registers ExpirationSchedule.Received
@@ -44,28 +48,23 @@ public class ReservationStateMachine : MassTransitStateMachine<Reservation>
 
         During(Reserved,
             When(ExpirationSchedule.Received)
-                .PublishAsync(ctx => ctx.Init<ReservationExpired>(new
-                {
-                    ReservationId = ctx.Saga.CorrelationId,
-                    ctx.Saga.BookId
-                }))
-                .Finalize());
+                .PublishReservationCancelled()
+                .Finalize(), 
+                When(ReservationCancellationRequested)
+                    .PublishReservationCancelled()
+                    .Unschedule(ExpirationSchedule).Finalize()
+            );
         
         SetCompletedWhenFinalized();
-        //     
-        // DuringAny(
-        //     When(ExpirationSchedule.AnyReceived)
-        //         .Finalize());
     }
 
     public State Requested { get; set; }
     public State Reserved { get; set; }
-    public State Expired { get; set; }
     
     public Schedule<Reservation, ReservationExpired> ExpirationSchedule { get; set; }
-
     public Event<ReservationRequested> ReservationRequested { get; set; }
     public Event<BookReserved> BookReserved { get; set; }
+    public Event<ReservationCancellationRequested> ReservationCancellationRequested { get; set; }
     
     private void UpdateSagaFromMessage(BehaviorContext<Reservation, ReservationRequested> saga)
     {
