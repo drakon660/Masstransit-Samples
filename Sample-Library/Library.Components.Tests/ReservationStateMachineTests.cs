@@ -116,7 +116,50 @@ public class ReservationStateMachineTests
         await AssertBookState(context.BookSagaHarness, bookId, x => x.Available, "Saga instance not found");
     }
 
+    [Fact]
+    public async Task When_Book_Is_Checked_Out_Reservation_Should_Be_Removed()
+    {
+        var reservationId = NewId.NextGuid();
+        var bookId = NewId.NextGuid();
+        var memberId = NewId.NextGuid();
 
+        await using var context = await CreateABook(bookId);
+        
+        await PublishReservationRequested(context.Harness, reservationId, memberId, bookId, TimeSpan.FromDays(2));
+
+        await AssertReservationState(context.ReservationSagaHarness, reservationId, x => x.Reserved, "Reservation was not reserved");
+        await AssertBookState(context.BookSagaHarness, bookId, x => x.Reserved, "Saga instance not found");
+
+        await context.Harness.Bus.Publish<BookCheckedOut>(new
+        {
+            BookId = bookId,
+            InVar.Timestamp,
+            MemberId = memberId,
+        }, TestContext.Current.CancellationToken);
+        
+        await AssertConsumedByReservationSaga<BookCheckedOut>(context.ReservationSagaHarness, "Reservation saga should have consumed the checkout message");
+        await AssertBookState(context.BookSagaHarness, bookId, x => x.CheckedOut, "Saga instance not found");
+        await AssertReservationRemoved(context.ReservationSagaHarness, reservationId);
+    }
+
+    [Fact]
+    public async Task When_Reservation_For_Already_Reserved_Book_Is_Requested_Should_Not_Reserve_The_Book()
+    {
+        var reservationId = NewId.NextGuid();
+        var bookId = NewId.NextGuid();
+        var memberId = NewId.NextGuid();
+
+        await using var context = await CreateABook(bookId);
+        
+        await PublishReservationRequested(context.Harness, reservationId, memberId, bookId, TimeSpan.FromDays(2));
+        await AssertReservationState(context.ReservationSagaHarness, reservationId, x => x.Reserved, "Reservation was not reserved");
+        
+        var secondReservationId = NewId.NextGuid();
+        await PublishReservationRequested(context.Harness, secondReservationId, memberId, bookId, TimeSpan.FromDays(2));
+        
+        await AssertReservationState(context.ReservationSagaHarness, secondReservationId, x => x.Requested, "Reservation was not reserved");
+    }
+    
     [Fact]
     public async Task When_Reservation_Cancelled_Should_Mark_Book_As_Available()
     {

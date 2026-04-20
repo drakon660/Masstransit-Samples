@@ -7,68 +7,73 @@ public class ReservationStateMachine : MassTransitStateMachine<Reservation>
 {
     public ReservationStateMachine()
     {
-        Event(() => ReservationRequested, x 
+        Event(() => ReservationRequested, x
+            => x.CorrelateById(m => m.Message.ReservationId));
+
+        Event(() => BookReserved, x
+            => x.CorrelateById(m => m.Message.ReservationId));
+
+        Event(() => ReservationCancellationRequested, x
             => x.CorrelateById(m => m.Message.ReservationId));
         
-        Event(() => BookReserved, x 
-            => x.CorrelateById(m => m.Message.ReservationId));
-        
-        Event(() => ReservationCancellationRequested, x 
-            => x.CorrelateById(m => m.Message.ReservationId));
-        
+        Event(() => BookCheckedOut, x
+            => x.CorrelateBy((instance,message) => instance.BookId ==  message.Message.BookId));
+
         // Schedule<Reservation, ReservationExpired> already registers ExpirationSchedule.Received
         // as the event for that message, so a separate Event(() => ReservationExpired, ...) is
         // redundant and can conflict. Use ExpirationSchedule.Received in behaviors instead.
         // Event(() => ReservationExpired, x
         //     => x.CorrelateById(m => m.Message.ReservationId));
-        
+
         InstanceState(x => x.CurrentState, Requested, Reserved);
-        
+
         Schedule(() => ExpirationSchedule, x => x.ExpirationTokenId, x =>
         {
             x.Delay = TimeSpan.FromHours(24);
-            x.Received = r => 
+            x.Received = r =>
                 r.CorrelateById(m => m.Message.ReservationId);
         });
-        
+
         Initially(
             When(ReservationRequested)
                 .Then(UpdateSagaFromMessage)
-                .TransitionTo(Requested), 
+                .TransitionTo(Requested),
             When(ExpirationSchedule.Received)
                 .Finalize());
-        
+
         During(Requested,
             When(BookReserved)
-                .Then((context) =>
-                {
-                    context.Saga.Reserved = context.Message.Timestamp;
-                }).Schedule(ExpirationSchedule, context => context.Init<ReservationExpired>(new
-                {
-                    context.Message.ReservationId
-                }), context => context.Message.Duration ?? TimeSpan.FromDays(1))
+                .Then((context) => { context.Saga.Reserved = context.Message.Timestamp; }).Schedule(ExpirationSchedule,
+                    context => context.Init<ReservationExpired>(new
+                    {
+                        context.Message.ReservationId
+                    }), context => context.Message.Duration ?? TimeSpan.FromDays(1))
                 .TransitionTo(Reserved));
 
         During(Reserved,
             When(ExpirationSchedule.Received)
                 .PublishReservationCancelled()
-                .Finalize(), 
-                When(ReservationCancellationRequested)
-                    .PublishReservationCancelled()
-                    .Unschedule(ExpirationSchedule).Finalize()
-            );
-        
+                .Finalize(),
+            When(ReservationCancellationRequested)
+                .PublishReservationCancelled()
+                .Unschedule(ExpirationSchedule).Finalize()
+        );
+
+        During(Reserved, When(BookCheckedOut)
+            .Unschedule(ExpirationSchedule).Finalize());
+
         SetCompletedWhenFinalized();
     }
 
     public State Requested { get; set; }
     public State Reserved { get; set; }
-    
+
     public Schedule<Reservation, ReservationExpired> ExpirationSchedule { get; set; }
     public Event<ReservationRequested> ReservationRequested { get; set; }
     public Event<BookReserved> BookReserved { get; set; }
     public Event<ReservationCancellationRequested> ReservationCancellationRequested { get; set; }
-    
+    public Event<BookCheckedOut> BookCheckedOut { get; set; }
+
     private void UpdateSagaFromMessage(BehaviorContext<Reservation, ReservationRequested> saga)
     {
         saga.Saga.Created = saga.Message.Timestamp;
