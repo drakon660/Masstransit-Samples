@@ -26,6 +26,7 @@ public class BookStateMachine : MassTransitStateMachine<Book>
                 Timestamp = context.Message.Timestamp,
                 MemberId = context.Message.MemberId,
                 BookId = context.Message.BookId,
+                context.Message.Duration,
             }
         )).TransitionTo(Reserved));
         
@@ -37,7 +38,7 @@ public class BookStateMachine : MassTransitStateMachine<Book>
     public State Reserved { get; set; }
     public Event<BookAdded> Added { get; set; }
     public Event<ReservationRequested> ReservationRequested { get; set; }
-    public Event<ReservationCancelled> ReservationExpired { get; set; }
+    public Event<ReservationExpired> ReservationExpired { get; set; }
 
     private void UpdateSagaFromMessage(BehaviorContext<Book, BookAdded> saga)
     {

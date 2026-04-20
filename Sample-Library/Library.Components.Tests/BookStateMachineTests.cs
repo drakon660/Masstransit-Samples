@@ -3,52 +3,100 @@ using Library.Components.StateMachines;
 using Library.Contracts;
 using MassTransit;
 using MassTransit.Testing;
-using Meziantou.Extensions.Logging.Xunit.v3;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace Library.Components.Tests;
 
-public class BookStateMachineTests(ITestOutputHelper output)
+public class BookStateMachineTests
 {
     [Fact]
     public async Task Should_Create_A_Saga_Instance()
     {
-        await using var provider = new ServiceCollection()
-            .AddLogging(lb => lb
-                .AddProvider(new XUnitLoggerProvider(output))
-                .SetMinimumLevel(LogLevel.Trace))
+        await using var provider = CreateProvider();
+        
+        var (harness, sagaHarness) = await StartBookHarness(provider);
+        
+        var bookId = NewId.NextGuid();
+
+        await PublishBookAdded(harness, bookId);
+
+        await AssertConsumed<BookAdded>(harness, "Message not consumed");
+        await AssertConsumedBySaga<BookAdded>(sagaHarness, "Message not consumed by saga");
+        await AssertSagaCreated(sagaHarness, bookId);
+        AssertSagaInstanceInState(sagaHarness, bookId, x => x.Available, "Saga instance not found");
+        await AssertBookState(sagaHarness, bookId, x => x.Available, "Saga did not exist");
+    }
+
+    private static ServiceProvider CreateProvider() =>
+        new ServiceCollection()
             .ConfigureMassTransit(x =>
             {
                 x.AddSagaStateMachine<BookStateMachine, Book>();
             })
             .BuildServiceProvider(true);
-        
-        var harness = provider.GetTestHarness();
-        
-        await harness.Start();
-        
-        var bookId = NewId.NextGuid();
 
-        await harness.Bus.Publish<BookAdded>(new
+    private static async Task<(ITestHarness Harness, ISagaStateMachineTestHarness<BookStateMachine, Book> SagaHarness)> StartBookHarness(
+        ServiceProvider provider)
+    {
+        var harness = provider.GetTestHarness();
+        await harness.Start();
+
+        return (harness, harness.GetSagaStateMachineHarness<BookStateMachine, Book>());
+    }
+
+    private static Task PublishBookAdded(
+        ITestHarness harness,
+        Guid bookId,
+        string isbn = "0307969959",
+        string title = "Neuromancer") =>
+        harness.Bus.Publish<BookAdded>(new
         {
             BookId = bookId,
-            Isbn = "0307969959",
-            Title = "Neuromancer"
+            Isbn = isbn,
+            Title = title,
         }, TestContext.Current.CancellationToken);
 
-        (await harness.Consumed.Any<BookAdded>(TestContext.Current.CancellationToken)).Should().BeTrue("Message not consumed");
+    private static async Task AssertConsumed<T>(
+        ITestHarness harness,
+        string because)
+        where T : class
+    {
+        (await harness.Consumed.Any<T>(TestContext.Current.CancellationToken)).Should().BeTrue(because);
+    }
 
-        var sagaHarness = harness.GetSagaStateMachineHarness<BookStateMachine, Book>();
+    private static async Task AssertConsumedBySaga<T>(
+        ISagaStateMachineTestHarness<BookStateMachine, Book> sagaHarness,
+        string because)
+        where T : class
+    {
+        (await sagaHarness.Consumed.Any<T>(TestContext.Current.CancellationToken)).Should().BeTrue(because);
+    }
 
-        (await sagaHarness.Consumed.Any<BookAdded>(TestContext.Current.CancellationToken)).Should().BeTrue("Message not consumed by saga");
+    private static async Task AssertSagaCreated(
+        ISagaStateMachineTestHarness<BookStateMachine, Book> sagaHarness,
+        Guid bookId)
+    {
+        (await sagaHarness.Created.Any(x => x.CorrelationId == bookId, TestContext.Current.CancellationToken))
+            .Should().BeTrue();
+    }
 
-        (await sagaHarness.Created.Any(x => x.CorrelationId == bookId, TestContext.Current.CancellationToken)).Should().BeTrue();
+    private static void AssertSagaInstanceInState(
+        ISagaStateMachineTestHarness<BookStateMachine, Book> sagaHarness,
+        Guid bookId,
+        Func<BookStateMachine, State> stateSelector,
+        string because)
+    {
+        var instance = sagaHarness.Created.ContainsInState(bookId, sagaHarness.StateMachine, stateSelector);
+        instance.Should().NotBeNull(because);
+    }
 
-        var instance = sagaHarness.Created.ContainsInState(bookId, sagaHarness.StateMachine, sagaHarness.StateMachine.Available);
-        instance.Should().NotBeNull("Saga instance not found");
-
-        Guid? existsId = await sagaHarness.Exists(bookId, x => x.Available);
-        existsId.Should().HaveValue("Saga did not exist");
+    private static async Task AssertBookState(
+        ISagaStateMachineTestHarness<BookStateMachine, Book> sagaHarness,
+        Guid bookId,
+        Func<BookStateMachine, State> stateSelector,
+        string because)
+    {
+        Guid? existsId = await sagaHarness.Exists(bookId, stateSelector);
+        existsId.Should().HaveValue(because);
     }
 }

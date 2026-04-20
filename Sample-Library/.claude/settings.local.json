@@ -5,7 +5,9 @@
       "Bash(dotnet build *)",
       "WebFetch(domain:masstransit.io)",
       "WebFetch(domain:masstransit.massient.com)",
-      "Bash(dotnet test *)"
+      "Bash(dotnet test *)",
+      "Bash(powershell -Command 'Add-Type -AssemblyName '\\\\''System.Reflection'\\\\''; $a = [System.Reflection.Assembly]::LoadFile\\('\\\\''C:\\\\Users\\\\drakon660\\\\.nuget\\\\packages\\\\meziantou.extensions.logging.xunit.v3\\\\1.1.26\\\\lib\\\\net10.0\\\\Meziantou.Extensions.Logging.Xunit.v3.dll'\\\\''\\); $a.GetTypes\\(\\) | ForEach-Object { Write-Output $_.FullName }')",
+      "Bash(powershell -Command '$a = [System.Reflection.Assembly]::LoadFile\\('\\\\''C:\\\\Users\\\\drakon660\\\\.nuget\\\\packages\\\\meziantou.extensions.logging.xunit.v3\\\\1.1.26\\\\lib\\\\net10.0\\\\Meziantou.Extensions.Logging.Xunit.v3.dll'\\\\''\\); try { $a.GetTypes\\(\\) } catch { $_.Exception.Types | Where-Object { $_ -ne $null } | ForEach-Object { $_.FullName } }')"
     ]
   }
 }

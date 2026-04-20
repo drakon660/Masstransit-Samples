@@ -36,15 +36,15 @@ public class ReservationStateMachine : MassTransitStateMachine<Reservation>
                 .Then((context) =>
                 {
                     context.Saga.Reserved = context.Message.Timestamp;
-                }).Schedule(ExpirationSchedule, context => context.Init<ReservationCancelled>(new
+                }).Schedule(ExpirationSchedule, context => context.Init<ReservationExpired>(new
                 {
                     context.Message.ReservationId
-                }))
+                }), context => context.Message.Duration ?? TimeSpan.FromDays(1))
                 .TransitionTo(Reserved));
 
         During(Reserved,
             When(ExpirationSchedule.Received)
-                .PublishAsync(ctx => ctx.Init<ReservationCancelled>(new
+                .PublishAsync(ctx => ctx.Init<ReservationExpired>(new
                 {
                     ReservationId = ctx.Saga.CorrelationId,
                     ctx.Saga.BookId
@@ -62,7 +62,7 @@ public class ReservationStateMachine : MassTransitStateMachine<Reservation>
     public State Reserved { get; set; }
     public State Expired { get; set; }
     
-    public Schedule<Reservation, ReservationCancelled> ExpirationSchedule { get; set; }
+    public Schedule<Reservation, ReservationExpired> ExpirationSchedule { get; set; }
 
     public Event<ReservationRequested> ReservationRequested { get; set; }
     public Event<BookReserved> BookReserved { get; set; }

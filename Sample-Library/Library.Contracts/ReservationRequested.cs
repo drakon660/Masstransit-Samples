@@ -6,4 +6,5 @@ public interface ReservationRequested
     DateTime Timestamp { get; }
     Guid MemberId { get; set; }
     Guid BookId { get; set; }
+    TimeSpan? Duration { get; set; }
 }
