@@ -32,8 +32,11 @@ public class ReservationStateMachine : MassTransitStateMachine<Reservation>
         });
         
         Initially(
-            When(ReservationRequested).Then(UpdateSagaFromMessage)
-                .TransitionTo(Requested));
+            When(ReservationRequested)
+                .Then(UpdateSagaFromMessage)
+                .TransitionTo(Requested), 
+            When(ExpirationSchedule.Received)
+                .Finalize());
         
         During(Requested,
             When(BookReserved)

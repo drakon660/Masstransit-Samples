@@ -1,4 +1,5 @@
-﻿using AwesomeAssertions;
+﻿using System.ComponentModel;
+using AwesomeAssertions;
 using Library.Components.StateMachines;
 using Library.Contracts;
 using MassTransit;
@@ -47,122 +48,100 @@ public class ReservationStateMachineTests
     [Fact]
     public async Task Should_Reserve_A_Book()
     {
-        await using var provider = CreateProvider(includeBookStateMachine: true);
-
-        var harness = provider.GetTestHarness();
-
-        await harness.Start();
-        
-        var reservationSagaHarness = harness.GetSagaStateMachineHarness<ReservationStateMachine, Reservation>();
-        var bookSagaHarness = harness.GetSagaStateMachineHarness<BookStateMachine, Book>();
-        
         var reservationId = NewId.NextGuid();
         var bookId = NewId.NextGuid();
         var memberId = NewId.NextGuid();
 
-        await harness.Bus.Publish<BookAdded>(new
-        {
-            BookId = bookId,
-            Isbn = "0307969959",
-            Title = "Neuromancer"
-        }, TestContext.Current.CancellationToken);
+        await using var context = await CreateABook(bookId);
         
-        await AssertBookState(bookSagaHarness, bookId, x => x.Available, "Saga instance not found");
-        
-        await PublishReservationRequested(harness, reservationId, memberId, bookId);
+        await PublishReservationRequested(context.Harness, reservationId, memberId, bookId);
 
-        await AssertConsumedByReservationSaga<ReservationRequested>(reservationSagaHarness, "Message not consumed by saga");
-        await AssertConsumedByBookSaga<ReservationRequested>(bookSagaHarness, "Message not consumed by saga");
+        await AssertConsumedByReservationSaga<ReservationRequested>(context.ReservationSagaHarness, "Message not consumed by saga");
+        await AssertConsumedByBookSaga<ReservationRequested>(context.BookSagaHarness, "Message not consumed by saga");
         
-        await AssertReservationState(reservationSagaHarness, reservationId, x => x.Reserved, "Saga instance not found");
-        await AssertBookState(bookSagaHarness, bookId, x => x.Reserved, "Saga instance not found");
+        await AssertReservationState(context.ReservationSagaHarness, reservationId, x => x.Reserved, "Saga instance not found");
+        await AssertBookState(context.BookSagaHarness, bookId, x => x.Reserved, "Saga instance not found");
     }
     
     [Fact]
     public async Task When_Reservation_Expires_Should_Mark_Book_As_Available()
     {
-        await using var provider = CreateProvider(includeBookStateMachine: true);
-
-        var harness = provider.GetTestHarness();
-
-        await harness.Start();
-        
-        var reservationSagaHarness = harness.GetSagaStateMachineHarness<ReservationStateMachine, Reservation>();
-        var bookSagaHarness = harness.GetSagaStateMachineHarness<BookStateMachine, Book>();
-        
         var reservationId = NewId.NextGuid();
         var bookId = NewId.NextGuid();
         var memberId = NewId.NextGuid();
 
-        await harness.Bus.Publish<BookAdded>(new
-        {
-            BookId = bookId,
-            Isbn = "0307969959",
-            Title = "Neuromancer"
-        }, TestContext.Current.CancellationToken);
+        await using var context = await CreateABook(bookId);
         
-        await AssertBookState(bookSagaHarness, bookId, x => x.Available, "Saga instance not found");
+        await PublishReservationRequested(context.Harness, reservationId, memberId, bookId);
         
-        await PublishReservationRequested(harness, reservationId, memberId, bookId);
+        await AssertReservationState(context.ReservationSagaHarness, reservationId, x => x.Requested, "Saga instance not found");
         
-        await AssertReservationState(reservationSagaHarness, reservationId, x => x.Requested, "Saga instance not found");
+        await AssertBookState(context.BookSagaHarness, bookId, x => x.Reserved, "Saga instance not found");
         
-        await AssertBookState(bookSagaHarness, bookId, x => x.Reserved, "Saga instance not found");
-        
-        using var adjustment = new QuartzTimeAdjustment(provider);
+        using var adjustment = new QuartzTimeAdjustment(context.Provider);
         
         await AdvanceTime(adjustment, TimeSpan.FromHours(24));
 
-        await AssertConsumedByReservationSaga<ReservationExpired>(reservationSagaHarness, "dupa");
-        await AssertReservationRemoved(reservationSagaHarness, reservationId);
-        await AssertBookState(bookSagaHarness, bookId, x => x.Available, "Saga instance not found");
+        await AssertConsumedByReservationSaga<ReservationExpired>(context.ReservationSagaHarness, "dupa");
+        await AssertReservationRemoved(context.ReservationSagaHarness, reservationId);
+        await AssertBookState(context.BookSagaHarness, bookId, x => x.Available, "Saga instance not found");
     }
     
     [Fact]
     public async Task When_Reservation_Expires_With_Custom_Duration_Should_Mark_Book_As_Available()
     {
-        await using var provider = CreateProvider(includeBookStateMachine: true);
-
-        var harness = provider.GetTestHarness();
-
-        await harness.Start();
-        
-        var reservationSagaHarness = harness.GetSagaStateMachineHarness<ReservationStateMachine, Reservation>();
-        var bookSagaHarness = harness.GetSagaStateMachineHarness<BookStateMachine, Book>();
-        
         var reservationId = NewId.NextGuid();
         var bookId = NewId.NextGuid();
         var memberId = NewId.NextGuid();
 
-        await harness.Bus.Publish<BookAdded>(new
-        {
-            BookId = bookId,
-            Isbn = "0307969959",
-            Title = "Neuromancer",
-        }, TestContext.Current.CancellationToken);
+        await using var context = await CreateABook(bookId);
         
-        await AssertBookState(bookSagaHarness, bookId, x => x.Available, "Saga instance not found");
-        
-        await PublishReservationRequested(harness, reservationId, memberId, bookId, TimeSpan.FromDays(2));
+        await PublishReservationRequested(context.Harness, reservationId, memberId, bookId, TimeSpan.FromDays(2));
 
-        await AssertReservationState(reservationSagaHarness, reservationId, x => x.Reserved, "Reservation was not reserved");
-        await AssertBookState(bookSagaHarness, bookId, x => x.Reserved, "Saga instance not found");
+        await AssertReservationState(context.ReservationSagaHarness, reservationId, x => x.Reserved, "Reservation was not reserved");
+        await AssertBookState(context.BookSagaHarness, bookId, x => x.Reserved, "Saga instance not found");
 
-        using var adjustment = new QuartzTimeAdjustment(provider);
+        using var adjustment = new QuartzTimeAdjustment(context.Provider);
 
         await AdvanceTime(adjustment, TimeSpan.FromHours(24));
         await AssertReservationState(
-            reservationSagaHarness,
+            context.ReservationSagaHarness,
             reservationId,
             x => x.Reserved,
             "Reservation should still be reserved before the two day duration elapses");
 
         await AdvanceTime(adjustment, TimeSpan.FromHours(24));
-        await AssertReservationCancelled(harness, bookSagaHarness);
-        await AssertReservationRemoved(reservationSagaHarness, reservationId);
-        await AssertBookState(bookSagaHarness, bookId, x => x.Available, "Saga instance not found");
+        await AssertReservationCancelled(context.Harness, context.BookSagaHarness);
+        await AssertReservationRemoved(context.ReservationSagaHarness, reservationId);
+        await AssertBookState(context.BookSagaHarness, bookId, x => x.Available, "Saga instance not found");
     }
 
+
+    [Fact]
+    public async Task When_Reservation_Cancelled_Should_Mark_Book_As_Available()
+    {
+        var reservationId = NewId.NextGuid();
+        var bookId = NewId.NextGuid();
+        var memberId = NewId.NextGuid();
+
+        await using var context = await CreateABook(bookId);
+        
+        await PublishReservationRequested(context.Harness, reservationId, memberId, bookId, TimeSpan.FromDays(2));
+
+        await AssertReservationState(context.ReservationSagaHarness, reservationId, x => x.Reserved, "Reservation was not reserved");
+        await AssertBookState(context.BookSagaHarness, bookId, x => x.Reserved, "Saga instance not found");
+        
+        await context.Harness.Bus.Publish<ReservationCancellationRequested>(new
+        {
+            ReservationId = reservationId,
+            InVar.Timestamp,
+        }, TestContext.Current.CancellationToken);
+
+        await AssertReservationCancelled(context.Harness, context.BookSagaHarness);
+        await AssertReservationRemoved(context.ReservationSagaHarness, reservationId);
+        await AssertBookState(context.BookSagaHarness, bookId, x => x.Available, "Saga instance not found");
+    }
+    
     private static ServiceProvider CreateProvider(bool includeBookStateMachine = false) =>
         new ServiceCollection()
             .ConfigureMassTransit(x =>
@@ -248,18 +227,62 @@ public class ReservationStateMachineTests
         Guid reservationId,
         Func<ReservationStateMachine, State> stateSelector,
         string because)
-    {
-        var existsId = await reservationSagaHarness.Exists(reservationId, stateSelector);
-        existsId.Should().NotBeEmpty(because);
-    }
+        => await AssertStateMachine(reservationSagaHarness, reservationId, stateSelector, because);
 
     private static async Task AssertBookState(
         ISagaStateMachineTestHarness<BookStateMachine, Book> bookSagaHarness,
         Guid bookId,
         Func<BookStateMachine, State> stateSelector,
         string because)
+        => await AssertStateMachine(bookSagaHarness, bookId, stateSelector, because);
+    
+    private static async Task AssertStateMachine<TStateMachine, TInstance>(
+        ISagaStateMachineTestHarness<TStateMachine, TInstance> sagaHarness,
+        Guid correlationId,
+        Func<TStateMachine, State> stateSelector,
+        string because) 
+        where TStateMachine : SagaStateMachine<TInstance>
+        where TInstance : class, SagaStateMachineInstance
     {
-        var existsId = await bookSagaHarness.Exists(bookId, stateSelector);
+        var existsId = await sagaHarness.Exists(correlationId, stateSelector);
         existsId.Should().NotBeEmpty(because);
+    }
+
+    private static async Task<BookTestContext> CreateABook(Guid bookId)
+    {
+        var provider = CreateProvider(includeBookStateMachine: true);
+
+        var harness = provider.GetTestHarness();
+
+        await harness.Start();
+        
+        var reservationSagaHarness = harness.GetSagaStateMachineHarness<ReservationStateMachine, Reservation>();
+        var bookSagaHarness = harness.GetSagaStateMachineHarness<BookStateMachine, Book>();
+        
+        await harness.Bus.Publish<BookAdded>(new
+        {
+            BookId = bookId,
+            Isbn = "0307969959",
+            Title = "Neuromancer",
+        }, TestContext.Current.CancellationToken);
+        
+        await AssertBookState(bookSagaHarness, bookId, x => x.Available, "Saga instance not found");
+
+        return new BookTestContext(provider, harness, reservationSagaHarness, bookSagaHarness);
+    }
+
+    private sealed class BookTestContext(
+        ServiceProvider provider,
+        ITestHarness harness,
+        ISagaStateMachineTestHarness<ReservationStateMachine, Reservation> reservationSagaHarness,
+        ISagaStateMachineTestHarness<BookStateMachine, Book> bookSagaHarness)
+        : IAsyncDisposable
+    {
+        public ServiceProvider Provider { get; } = provider;
+        public ITestHarness Harness { get; } = harness;
+        public ISagaStateMachineTestHarness<ReservationStateMachine, Reservation> ReservationSagaHarness { get; } = reservationSagaHarness;
+        public ISagaStateMachineTestHarness<BookStateMachine, Book> BookSagaHarness { get; } = bookSagaHarness;
+
+        public ValueTask DisposeAsync() => Provider.DisposeAsync();
     }
 }
