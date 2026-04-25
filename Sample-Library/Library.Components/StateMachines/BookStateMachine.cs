@@ -23,16 +23,7 @@ public class BookStateMachine : MassTransitStateMachine<Book>
 
         Initially(When(Added).Then(UpdateSagaFromMessage).TransitionTo(Available));
 
-        DuringAny(When(ReservationRequested).TransitionTo(Reserved).PublishAsync(context => context.Init<BookReserved>(
-            new
-            {
-                ReservationId = context.Message.ReservationId,
-                Timestamp = context.Message.Timestamp,
-                MemberId = context.Message.MemberId,
-                BookId = context.Message.BookId,
-                context.Message.Duration,
-            }
-        )).TransitionTo(Reserved));
+        During(Available, When(ReservationRequested).TransitionTo(Reserved).PublishBookReserved().TransitionTo(Reserved));
         
         During(Reserved,
             When(ReservationCancelled).TransitionTo(Available));
