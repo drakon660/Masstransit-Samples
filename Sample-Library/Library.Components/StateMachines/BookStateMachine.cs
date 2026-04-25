@@ -23,7 +23,17 @@ public class BookStateMachine : MassTransitStateMachine<Book>
 
         Initially(When(Added).Then(UpdateSagaFromMessage).TransitionTo(Available));
 
-        During(Available, When(ReservationRequested).TransitionTo(Reserved).PublishBookReserved().TransitionTo(Reserved));
+        During(Available, When(ReservationRequested).Then(context =>
+        {
+            context.Saga.ReservationId = context.Message.ReservationId;
+        }).TransitionTo(Reserved).PublishBookReserved().TransitionTo(Reserved));
+        
+        During(Reserved,
+            When(ReservationRequested)
+                .If(context => context.Saga.ReservationId.HasValue 
+                               && context.Saga.ReservationId.Value == context.Message.ReservationId,
+                    x => x.PublishBookReserved())
+        );
         
         During(Reserved,
             When(ReservationCancelled).TransitionTo(Available));

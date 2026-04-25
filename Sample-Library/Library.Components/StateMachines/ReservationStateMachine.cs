@@ -15,9 +15,9 @@ public class ReservationStateMachine : MassTransitStateMachine<Reservation>
 
         Event(() => ReservationCancellationRequested, x
             => x.CorrelateById(m => m.Message.ReservationId));
-        
+
         Event(() => BookCheckedOut, x
-            => x.CorrelateBy((instance,message) => instance.BookId ==  message.Message.BookId));
+            => x.CorrelateBy((instance, message) => instance.BookId == message.Message.BookId));
 
         // Schedule<Reservation, ReservationExpired> already registers ExpirationSchedule.Received
         // as the event for that message, so a separate Event(() => ReservationExpired, ...) is
@@ -38,9 +38,19 @@ public class ReservationStateMachine : MassTransitStateMachine<Reservation>
             When(ReservationRequested)
                 .Then(UpdateSagaFromMessage)
                 .TransitionTo(Requested),
+            When(BookReserved).Then(context =>
+                {
+                    context.Saga.Created = context.Message.Timestamp;
+                    context.Saga.MemberId = context.Message.MemberId;
+                    context.Saga.BookId = context.Message.BookId;
+                    context.Saga.Reserved = context.Message.Timestamp;
+                }).Schedule(ExpirationSchedule,
+                    context => context.Init<ReservationExpired>(new { context.Message.ReservationId }),
+                    context => context.Message.Duration ?? TimeSpan.FromDays(1))
+                .TransitionTo(Reserved),
             When(ExpirationSchedule.Received)
                 .Finalize());
-
+        
         During(Requested,
             When(BookReserved)
                 .Then((context) => { context.Saga.Reserved = context.Message.Timestamp; }).Schedule(ExpirationSchedule,
@@ -48,19 +58,25 @@ public class ReservationStateMachine : MassTransitStateMachine<Reservation>
                     {
                         context.Message.ReservationId
                     }), context => context.Message.Duration ?? TimeSpan.FromDays(1))
-                .TransitionTo(Reserved));
-
+                .TransitionTo(Reserved),
+            Ignore(ReservationRequested));
+        
         During(Reserved,
+            When(BookReserved)
+                .Schedule(ExpirationSchedule,
+                    context => context.Init<ReservationExpired>(new { context.Message.ReservationId }),
+                    context => context.Message.Duration ?? TimeSpan.FromDays(1)),
             When(ExpirationSchedule.Received)
                 .PublishReservationCancelled()
                 .Finalize(),
             When(ReservationCancellationRequested)
                 .PublishReservationCancelled()
-                .Unschedule(ExpirationSchedule).Finalize()
+                .Unschedule(ExpirationSchedule)
+                .Finalize(),
+            When(BookCheckedOut)
+                .Unschedule(ExpirationSchedule).Finalize(),
+            Ignore(ReservationRequested)
         );
-
-        During(Reserved, When(BookCheckedOut)
-            .Unschedule(ExpirationSchedule).Finalize());
 
         SetCompletedWhenFinalized();
     }
