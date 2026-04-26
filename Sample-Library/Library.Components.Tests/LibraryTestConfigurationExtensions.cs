@@ -1,4 +1,5 @@
-﻿using MassTransit;
+﻿using Library.Contracts;
+using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
 
@@ -18,11 +19,12 @@ public static class LibraryTestConfigurationExtensions
                 x.AddPublishMessageScheduler();
 
                 configure?.Invoke(x);
-
+                
+                x.AddRequestClient<RenewCheckOut>();
+                
                 x.UsingInMemory((context, cfg) =>
                 {
                     cfg.UsePublishMessageScheduler();
-                        
                     cfg.ConfigureEndpoints(context);
                 });
             });
