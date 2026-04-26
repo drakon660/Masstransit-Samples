@@ -1,4 +1,4 @@
-namespace Library.Components.StateMachines;
+namespace Library.Components.StateMachines.CheckOut;
 
 public interface CheckOutSettings
 {

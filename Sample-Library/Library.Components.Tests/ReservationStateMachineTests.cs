@@ -1,5 +1,6 @@
 using AwesomeAssertions;
-using Library.Components.StateMachines;
+using Library.Components.StateMachines.Book;
+using Library.Components.StateMachines.Reservation;
 using Library.Contracts;
 using MassTransit;
 using MassTransit.QuartzIntegration;

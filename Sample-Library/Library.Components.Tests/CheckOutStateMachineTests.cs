@@ -1,6 +1,6 @@
 using AwesomeAssertions;
 using Library.Components.Services;
-using Library.Components.StateMachines;
+using Library.Components.StateMachines.CheckOut;
 using Library.Contracts;
 using MassTransit;
 using MassTransit.Testing;

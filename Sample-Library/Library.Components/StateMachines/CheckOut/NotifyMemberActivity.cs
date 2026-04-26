@@ -2,7 +2,7 @@ using Library.Components.Services;
 using Library.Contracts;
 using MassTransit;
 
-namespace Library.Components.StateMachines;
+namespace Library.Components.StateMachines.CheckOut;
 
 public class NotifyMemberActivity(IMemberRegistry memberRegistry) : IStateMachineActivity<CheckOut>
 {

@@ -1,7 +1,7 @@
 ﻿using Library.Contracts;
 using MassTransit;
 
-namespace Library.Components.StateMachines;
+namespace Library.Components.StateMachines.Book;
 
 public class BookStateMachine : MassTransitStateMachine<Book>
 {

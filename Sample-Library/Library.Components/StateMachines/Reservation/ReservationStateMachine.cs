@@ -1,7 +1,7 @@
 ﻿using Library.Contracts;
 using MassTransit;
 
-namespace Library.Components.StateMachines;
+namespace Library.Components.StateMachines.Reservation;
 
 public class ReservationStateMachine : MassTransitStateMachine<Reservation>
 {

@@ -1,6 +1,6 @@
 ﻿using MassTransit;
 
-namespace Library.Components.StateMachines;
+namespace Library.Components.StateMachines.Reservation;
 
 public class Reservation : SagaStateMachineInstance
 {

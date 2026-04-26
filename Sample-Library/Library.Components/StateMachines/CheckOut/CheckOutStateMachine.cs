@@ -1,10 +1,7 @@
-using System.Diagnostics.Tracing;
-using System.Xml.Schema;
-using Automatonymous;
 using Library.Contracts;
 using MassTransit;
 
-namespace Library.Components.StateMachines;
+namespace Library.Components.StateMachines.CheckOut;
 
 public class CheckOutStateMachine : MassTransitStateMachine<CheckOut>
 {
@@ -30,7 +27,7 @@ public class CheckOutStateMachine : MassTransitStateMachine<CheckOut>
     }
 
 
-    public Event<BookCheckedOut> BookCheckedOut { get; set; }
+    public Event<BookCheckedOut> BookCheckedOut { get; }
 
     public State CheckedOut { get; }
 }

@@ -1,5 +1,5 @@
 using AwesomeAssertions;
-using Library.Components.StateMachines;
+using Library.Components.StateMachines.Book;
 using Library.Contracts;
 using MassTransit;
 using MassTransit.Testing;

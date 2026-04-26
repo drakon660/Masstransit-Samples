@@ -6,7 +6,7 @@ namespace Library.Components.Tests;
 
 public static class LibraryTestConfigurationExtensions
 {
-    public static IServiceCollection ConfigureMassTransit(this IServiceCollection services, Action<IBusRegistrationConfigurator>? configure = null)
+    public static IServiceCollection ConfigureMassTransit(this IServiceCollection services, Action<IBusRegistrationConfigurator> configure = null)
     {
         services.AddQuartz()
             .AddMassTransitTestHarness(x =>

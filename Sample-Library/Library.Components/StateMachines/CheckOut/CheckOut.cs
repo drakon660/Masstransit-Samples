@@ -1,6 +1,6 @@
 ﻿using MassTransit;
 
-namespace Library.Components.StateMachines;
+namespace Library.Components.StateMachines.CheckOut;
 
 public class CheckOut : SagaStateMachineInstance
 {
