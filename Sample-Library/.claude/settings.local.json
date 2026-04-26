@@ -7,7 +7,13 @@
       "WebFetch(domain:masstransit.massient.com)",
       "Bash(dotnet test *)",
       "Bash(powershell -Command 'Add-Type -AssemblyName '\\\\''System.Reflection'\\\\''; $a = [System.Reflection.Assembly]::LoadFile\\('\\\\''C:\\\\Users\\\\drakon660\\\\.nuget\\\\packages\\\\meziantou.extensions.logging.xunit.v3\\\\1.1.26\\\\lib\\\\net10.0\\\\Meziantou.Extensions.Logging.Xunit.v3.dll'\\\\''\\); $a.GetTypes\\(\\) | ForEach-Object { Write-Output $_.FullName }')",
-      "Bash(powershell -Command '$a = [System.Reflection.Assembly]::LoadFile\\('\\\\''C:\\\\Users\\\\drakon660\\\\.nuget\\\\packages\\\\meziantou.extensions.logging.xunit.v3\\\\1.1.26\\\\lib\\\\net10.0\\\\Meziantou.Extensions.Logging.Xunit.v3.dll'\\\\''\\); try { $a.GetTypes\\(\\) } catch { $_.Exception.Types | Where-Object { $_ -ne $null } | ForEach-Object { $_.FullName } }')"
+      "Bash(powershell -Command '$a = [System.Reflection.Assembly]::LoadFile\\('\\\\''C:\\\\Users\\\\drakon660\\\\.nuget\\\\packages\\\\meziantou.extensions.logging.xunit.v3\\\\1.1.26\\\\lib\\\\net10.0\\\\Meziantou.Extensions.Logging.Xunit.v3.dll'\\\\''\\); try { $a.GetTypes\\(\\) } catch { $_.Exception.Types | Where-Object { $_ -ne $null } | ForEach-Object { $_.FullName } }')",
+      "Bash(tasklist)",
+      "Bash(taskkill /F /IM testhost.exe /T)",
+      "PowerShell(Stop-Process *)",
+      "PowerShell(Remove-Item *)",
+      "PowerShell($path = \"F:\\\\src\\\\Masstransit-Samples\\\\Sample-Library\\\\Library.Components.Tests\\\\bin\\\\Debug\\\\net10.0\\\\AwesomeAssertions.dll\"; Get-Process | Where-Object { $_.Modules.FileName -contains $path } 2>$null | Select-Object Id, ProcessName, Path)",
+      "PowerShell(Get-CimInstance *)"
     ]
   }
 }
