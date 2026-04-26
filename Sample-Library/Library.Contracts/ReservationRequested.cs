@@ -2,9 +2,9 @@
 
 public interface ReservationRequested
 {
-    Guid ReservationId { get; set; }
+    Guid ReservationId { get; }
     DateTime Timestamp { get; }
-    Guid MemberId { get; set; }
-    Guid BookId { get; set; }
-    TimeSpan? Duration { get; set; }
+    Guid MemberId { get; }
+    Guid BookId { get; }
+    TimeSpan? Duration { get; }
 }

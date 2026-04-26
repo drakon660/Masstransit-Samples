@@ -2,6 +2,6 @@
 
 public interface BookReservationCancelled
 {
-    Guid ReservationId { get; set; }
-    Guid BookId { get; set; }
+    Guid ReservationId { get; }
+    Guid BookId { get; }
 }
