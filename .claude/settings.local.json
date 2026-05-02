@@ -9,5 +9,9 @@
       "Bash(gh api:*)",
       "WebFetch(domain:github.com)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "claude"
+  ],
+  "enableAllProjectMcpServers": true
 }

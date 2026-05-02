@@ -1,0 +1,23 @@
+{
+  "mcpServers": {
+    "claude": {
+      "command": "claude",
+      "args": ["mcp", "serve"]
+    },
+    "caveman": {
+      "command": "npx.cmd",
+      "args": [
+        "-y",
+        "caveman-shrink",
+        "cmd.exe",
+        "/d",
+        "/s",
+        "/c",
+        "npx.cmd",
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "F:\\src\\Masstransit-Samples"
+      ]
+    }
+  }
+}
