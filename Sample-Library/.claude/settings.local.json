@@ -13,7 +13,13 @@
       "PowerShell(Stop-Process *)",
       "PowerShell(Remove-Item *)",
       "PowerShell($path = \"F:\\\\src\\\\Masstransit-Samples\\\\Sample-Library\\\\Library.Components.Tests\\\\bin\\\\Debug\\\\net10.0\\\\AwesomeAssertions.dll\"; Get-Process | Where-Object { $_.Modules.FileName -contains $path } 2>$null | Select-Object Id, ProcessName, Path)",
-      "PowerShell(Get-CimInstance *)"
+      "PowerShell(Get-CimInstance *)",
+      "Bash(xargs grep -l \"ConfigureMassTransit\")",
+      "Bash(dotnet package *)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "claude",
+    "caveman"
+  ]
 }

@@ -48,7 +48,7 @@ public static class HarnessExtensions
             InVar.Timestamp,
         }, TestContext.Current.CancellationToken);
 
-  public static Task PublishReservationCancellationRequested(
+    public static Task PublishReservationCancellationRequested(
         this ITestHarness harness,
         Guid reservationId) =>
         harness.Bus.Publish<ReservationCancellationRequested>(new
@@ -60,12 +60,12 @@ public static class HarnessExtensions
     public static async Task AssertConsumed<T>(this ITestHarness harness, string because)
         where T : class =>
         (await harness.Consumed.Any<T>(TestContext.Current.CancellationToken))
-            .Should().BeTrue(because);
+        .Should().BeTrue(because);
 
     public static async Task AssertPublished<T>(this ITestHarness harness, string because)
         where T : class =>
         (await harness.Published.Any<T>(TestContext.Current.CancellationToken))
-            .Should().BeTrue(because);
+        .Should().BeTrue(because);
 
     public static async Task AssertConsumed<T, TStateMachine, TInstance>(
         this ISagaStateMachineTestHarness<TStateMachine, TInstance> sagaHarness,
@@ -74,15 +74,36 @@ public static class HarnessExtensions
         where TStateMachine : SagaStateMachine<TInstance>
         where TInstance : class, SagaStateMachineInstance =>
         (await sagaHarness.Consumed.Any<T>(TestContext.Current.CancellationToken))
-            .Should().BeTrue(because);
+        .Should().BeTrue(because);
+
+    public static async Task AssertConsumed<T, TStateMachine, TInstance>(
+        this ISagaStateMachineTestHarness<TStateMachine, TInstance> sagaHarness,
+        FilterDelegate<IReceivedMessage<T>> filter,
+        string because)
+        where T : class
+        where TStateMachine : SagaStateMachine<TInstance>
+        where TInstance : class, SagaStateMachineInstance =>
+        (await sagaHarness.Consumed.Any(filter, TestContext.Current.CancellationToken))
+        .Should().BeTrue(because);
 
     public static async Task AssertCreated<TStateMachine, TInstance>(
         this ISagaStateMachineTestHarness<TStateMachine, TInstance> sagaHarness,
         Guid correlationId)
         where TStateMachine : SagaStateMachine<TInstance>
-        where TInstance : class, SagaStateMachineInstance =>
-        (await sagaHarness.Created.Any(x => x.CorrelationId == correlationId, TestContext.Current.CancellationToken))
+        where TInstance : class, SagaStateMachineInstance
+    {
+        (await sagaHarness.Created.Any(x => x.CorrelationId == correlationId,
+                TestContext.Current.CancellationToken))
             .Should().BeTrue();
+    }
+
+    public static async Task AssertCreated<TStateMachine, TInstance>(
+        this ISagaStateMachineTestHarness<TStateMachine, TInstance> sagaHarness)
+        where TStateMachine : SagaStateMachine<TInstance>
+        where TInstance : class, SagaStateMachineInstance
+    {
+        (await sagaHarness.Created.Any(TestContext.Current.CancellationToken)).Should().BeTrue();
+    }
 
     public static async Task AssertState<TStateMachine, TInstance>(
         this ISagaStateMachineTestHarness<TStateMachine, TInstance> sagaHarness,
@@ -94,6 +115,18 @@ public static class HarnessExtensions
     {
         var existsId = await sagaHarness.Exists(correlationId, stateSelector);
         existsId.Should().NotBeEmpty(because);
+    }
+
+    public static async Task<ISagaInstance<TInstance>> FirstCreated<TStateMachine, TInstance>(
+        this ISagaStateMachineTestHarness<TStateMachine, TInstance> sagaHarness,
+        FilterDelegate<TInstance> predicate)
+        where TStateMachine : SagaStateMachine<TInstance>
+        where TInstance : class, SagaStateMachineInstance
+    {
+        await foreach (var s in sagaHarness.Created.SelectAsync(predicate, TestContext.Current.CancellationToken))
+            return s;
+
+        return null;
     }
 
     public static async Task AssertNotExists<TStateMachine, TInstance>(

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "lmstudio": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "LM Studio (local)",
+      "options": {
+        "baseURL": "http://127.0.0.1:1234/v1"
+      },
+      "models": {
+        "qwen/qwen3-coder-30b": {
+          "name": "Qwen3 Coder 30B (local)"
+        },
+        "deepseek-coder-6.7b-instruct": {
+          "name": "DeepSeek Coder 6.7B Instruct (local)"
+        },
+        "qwen/qwen3.5-9b": {
+          "name": "Qwen3.5 9B (local)"
+        },
+        "openai/gpt-oss-20b": {
+          "name": "openai/gpt-oss-20b"
+        },
+         "qwen2.5-coder-14b-instruct": {
+          "name": "Qwen2.5 Coder 14B Instruct (local)"
+        },
+        "qwen2.5-coder-7b-instruct": {
+          "name": "Qwen2.5 Coder 7B Instruct (local)"
+        }
+      }
+    }
+  }
+}

@@ -51,6 +51,8 @@ doc/build/*
 docs/.vuepress/dist
 _book
 /node_modules
+dashboard/node_modules/
+dashboard/build/
 .vscode
 **/.idea/
 appsettings.Development.json
