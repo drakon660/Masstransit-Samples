@@ -38,23 +38,11 @@ public static class LibraryIntegrationTestConfigurationExtensions
         return services;
     }
 
-    public static async Task<ServiceProvider> CreateProvider(
-        string connectionString,
-        ITestOutputHelper testOutputHelper = null)
+    public static async Task<ServiceProvider> CreateProvider(string connectionString)
     {
         var services = new ServiceCollection();
-
-        services.AddLogging(builder =>
-        {
-            builder.SetMinimumLevel(LogLevel.Debug);
-            builder.AddFilter("Microsoft.EntityFrameworkCore", LogLevel.Information);
-            builder.AddFilter("MassTransit", LogLevel.Debug);
-
-            if (testOutputHelper is not null)
-                builder.AddProvider(new XUnitLoggerProvider(testOutputHelper, appendScope: true));
-        });
-
-        services.ConfigureMassTransitWithPostgres(connectionString);
+        Library.Integration.Tests.Xunit.XunitLoggingExtensions.UseSharedXunitLogging(services)
+            .ConfigureMassTransitWithPostgres(connectionString);
 
         var provider = services.BuildServiceProvider(true);
 

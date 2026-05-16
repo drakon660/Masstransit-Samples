@@ -11,6 +11,11 @@ namespace Library.Components.Tests;
 
 public class ReservationStateMachineTests
 {
+    public ReservationStateMachineTests(ITestOutputHelper testOutputHelper)
+    {
+        Library.Components.Tests.Xunit.TestOutputRelay.Use(testOutputHelper);
+    }
+
     [Fact]
     public async Task Should_Create_A_Saga_Instance()
     {

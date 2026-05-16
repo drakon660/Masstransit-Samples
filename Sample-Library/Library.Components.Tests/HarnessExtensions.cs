@@ -56,7 +56,7 @@ public static class HarnessExtensions
             ReservationId = reservationId,
             InVar.Timestamp,
         }, TestContext.Current.CancellationToken);
-
+    
     public static async Task AssertConsumed<T>(this ITestHarness harness, string because)
         where T : class =>
         (await harness.Consumed.Any<T>(TestContext.Current.CancellationToken))

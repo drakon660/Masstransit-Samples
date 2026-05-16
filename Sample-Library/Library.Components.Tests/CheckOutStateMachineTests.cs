@@ -1,6 +1,8 @@
 using AwesomeAssertions;
+using Library.Components.Consumers;
 using Library.Components.Services;
 using Library.Components.StateMachines.CheckOut;
+using Library.Components.Tests.Xunit;
 using Library.Contracts;
 using MassTransit;
 using MassTransit.Testing;
@@ -10,10 +12,15 @@ namespace Library.Components.Tests;
 
 public class CheckOutStateMachineTests
 {
+    public CheckOutStateMachineTests(ITestOutputHelper testOutputHelper)
+    {
+        TestOutputRelay.Use(testOutputHelper);
+    }
+
     [Fact]
     public async Task Should_Create_A_Saga_Instance()
     {
-        await using var provider = CreateProvider(new TestCheckOutSettings());
+        await using var provider = CreateProvider(new TestCheckOutSettings(), addRenewCheckOutClient: true);
         using var cts = CreateTimeoutToken();
 
         var harness = provider.GetTestHarness();
@@ -44,7 +51,7 @@ public class CheckOutStateMachineTests
     [Fact]
     public async Task When_CheckedOut_Is_Renewed_Should_Renew_Existing_CheckOut()
     {
-        await using var provider = CreateProvider(new TestCheckOutSettings());
+        await using var provider = CreateProvider(new TestCheckOutSettings(), addRenewCheckOutClient: true);
         using var cts = CreateTimeoutToken();
 
         var harness = provider.GetTestHarness();
@@ -105,7 +112,9 @@ public class CheckOutStateMachineTests
     [Fact]
     public async Task When_CheckedOut_Is_Renewed_Should_Renew_An_Existing_CheckOut_Up_To_The_Limit()
     {
-        await using var provider = CreateProvider(new TestCheckOutSettings { CheckOutDurationLimit = TimeSpan.FromDays(13) });
+        await using var provider = CreateProvider(
+            new TestCheckOutSettings { CheckOutDurationLimit = TimeSpan.FromDays(13) },
+            addRenewCheckOutClient: true);
         using var cts = CreateTimeoutToken();
 
         var harness = provider.GetTestHarness();
@@ -142,6 +151,67 @@ public class CheckOutStateMachineTests
         limitReached.Message.DueDate.Should().BeOnOrAfter(checkedOutAt + TimeSpan.FromDays(13));
     }
 
+    [Fact]
+    public async Task When_CheckedOut_It_Should_Add_The_Book_To_Member_Collection()
+    {
+        await using var provider = CreateProvider(new TestCheckOutSettings { CheckOutDurationLimit = TimeSpan.FromDays(13) }, register:(
+            x =>
+            {
+                x.AddConsumer<MemberCollectionConsumer>();
+            }));
+        using var cts = CreateTimeoutToken();
+
+        var harness = provider.GetTestHarness();
+        await harness.Start();
+
+        var sagaHarness = harness.GetSagaStateMachineHarness<CheckOutStateMachine, CheckOut>();
+
+        var checkOutId = NewId.NextGuid();
+        var bookId = NewId.NextGuid();
+        var memberId = NewId.NextGuid();
+        
+        await harness.PublishBookCheckedOut(bookId, memberId, checkOutId);
+        
+        await sagaHarness.AssertCreated(checkOutId);
+        await sagaHarness.AssertState(checkOutId, x => x.CheckedOut, "Saga not in CheckedOut state");
+
+        await harness.AssertPublished<AddBookToMemberCollection>("Add to Collection not published");
+        await harness.AssertConsumed<AddBookToMemberCollection>("Add to Collection not consumed");
+    }
+    
+    
+    [Fact]
+    public async Task When_CheckedOut_It_Should_Handle_the_fault_message_via_correlation()
+    {
+        await using var provider = CreateProvider(new TestCheckOutSettings { CheckOutDurationLimit = TimeSpan.FromDays(13) }, register:(
+            x =>
+            {
+                x.AddConsumer<BadMemberCollectionConsumer>();
+            }));
+        using var cts = CreateTimeoutToken();
+
+        var harness = provider.GetTestHarness();
+        await harness.Start();
+
+        var sagaHarness = harness.GetSagaStateMachineHarness<CheckOutStateMachine, CheckOut>();
+
+        var checkOutId = NewId.NextGuid();
+        var bookId = NewId.NextGuid();
+        var memberId = NewId.NextGuid();
+        
+        await harness.PublishBookCheckedOut(bookId, memberId, checkOutId);
+        
+        await sagaHarness.AssertCreated(checkOutId);
+        await sagaHarness.AssertState(checkOutId, x => x.CheckedOut, "Saga not in CheckedOut state");
+
+        await harness.AssertPublished<AddBookToMemberCollection>("Add to Collection not published");
+        await harness.AssertConsumed<AddBookToMemberCollection>("Add to Collection not consumed");
+        
+        await harness.AssertPublished<Fault<AddBookToMemberCollection>>("fault not published");
+        await sagaHarness.AssertConsumed<Fault<AddBookToMemberCollection>, CheckOutStateMachine, CheckOut>(
+            "fault not consumed by saga");
+    }
+    
     private static CancellationTokenSource CreateTimeoutToken(TimeSpan? timeout = null)
     {
         var cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
@@ -149,13 +219,19 @@ public class CheckOutStateMachineTests
         return cts;
     }
 
-    private static ServiceProvider CreateProvider(CheckOutSettings checkOutSettings) =>
+    private static ServiceProvider CreateProvider(CheckOutSettings checkOutSettings, bool addRenewCheckOutClient = false, 
+        Action<IBusRegistrationConfigurator> register = null) =>
         new ServiceCollection()
             .AddSingleton(checkOutSettings)
             .AddScoped<IMemberRegistry, AnyMemberIsValidMemberRegistry>()
             .ConfigureMassTransit(x =>
             {
                 x.AddSagaStateMachine<CheckOutStateMachine, CheckOut>();
+                
+                if (addRenewCheckOutClient)
+                    x.AddRequestClient<RenewCheckOut>();
+
+                register?.Invoke(x);
             })
             .BuildServiceProvider(true);
 
@@ -168,5 +244,14 @@ public class CheckOutStateMachineTests
     private sealed class AnyMemberIsValidMemberRegistry : IMemberRegistry
     {
         public Task<bool> IsMemberValid(Guid memberId) => Task.FromResult(true);
+    }
+    
+    class BadMemberCollectionConsumer : IConsumer<AddBookToMemberCollection>
+    {
+        public async Task Consume(ConsumeContext<AddBookToMemberCollection> context)
+        {
+            await Task.Delay(1000);
+            throw new InvalidOperationException("The member is overdrawn");
+        }
     }
 }

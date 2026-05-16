@@ -1,4 +1,5 @@
-﻿using Library.Contracts;
+﻿using Library.Components.Tests.Xunit;
+using Library.Contracts;
 using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
@@ -9,18 +10,17 @@ public static class LibraryTestConfigurationExtensions
 {
     public static IServiceCollection ConfigureMassTransit(this IServiceCollection services, Action<IBusRegistrationConfigurator> configure = null)
     {
-        services.AddQuartz()
+        services
+            .AddQuartz()
             .AddMassTransitTestHarness(x =>
             {
                 x.SetKebabCaseEndpointNameFormatter();
-
+                x.UseSharedXunitLogging();
                 x.AddQuartzConsumers();
 
                 x.AddPublishMessageScheduler();
 
                 configure?.Invoke(x);
-                
-                x.AddRequestClient<RenewCheckOut>();
                 
                 x.UsingInMemory((context, cfg) =>
                 {

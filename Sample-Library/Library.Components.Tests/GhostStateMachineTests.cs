@@ -9,6 +9,11 @@ namespace Library.Components.Tests;
 
 public class GhostStateMachineTests
 {
+    public GhostStateMachineTests(ITestOutputHelper testOutputHelper)
+    {
+        Library.Components.Tests.Xunit.TestOutputRelay.Use(testOutputHelper);
+    }
+
     [Fact]
     public async Task Should_Transition_To_Active_When_Started_First()
     {

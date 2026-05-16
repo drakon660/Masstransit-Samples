@@ -11,7 +11,15 @@ public class CheckOutStateMachine : MassTransitStateMachine<CheckOut>
 
         Event(() => BookCheckedOut, x =>
             x.CorrelateById(m => m.Message.CheckOutId));
-
+        
+        Event(() => AddedToCollection, x =>
+            x.CorrelateBy((instance, context) =>
+                instance.BookId == context.Message.BookId && instance.MemberId == context.Message.MemberId));
+        
+        Event(() => AddedToCollectionFaulted, x =>
+            x.CorrelateBy((instance, context) =>
+                instance.BookId == context.Message.Message.BookId && instance.MemberId == context.Message.Message.MemberId));
+        
         Event(() => RenewCheckOutRequested, x =>
             x.CorrelateById(m => m.Message.CheckOutId)
                 .OnMissingInstance(m =>
@@ -27,6 +35,11 @@ public class CheckOutStateMachine : MassTransitStateMachine<CheckOut>
                 context.Saga.DueDate = context.Message.Timestamp + settings.CheckOutDuration;
             })
             .Activity(x => x.OfInstanceType<NotifyMemberActivity>())
+            .PublishAsync(x=>x.Init<AddBookToMemberCollection>(new
+            {
+                x.Saga.BookId,
+                x.Saga.MemberId,
+            }))
             .TransitionTo(CheckedOut));
 
         During(CheckedOut, When(RenewCheckOutRequested)
@@ -46,10 +59,19 @@ public class CheckOutStateMachine : MassTransitStateMachine<CheckOut>
                         context.Message.CheckOutId,
                         context.Saga.DueDate
                     }))));
+
+        DuringAny(When(AddedToCollection).Then(x=>{}));
+        DuringAny(When(AddedToCollectionFaulted).Then(x =>
+        {
+            Console.WriteLine("Add to collection faulted");
+        }));
     }
 
     public Event<BookCheckedOut> BookCheckedOut { get; }
     public Event<RenewCheckOut> RenewCheckOutRequested { get; }
+    
+    public Event<AddBookToMemberCollection> AddedToCollection { get; }
+    public Event<Fault<AddBookToMemberCollection>> AddedToCollectionFaulted { get; }
 
     public State CheckedOut { get; }
 }
