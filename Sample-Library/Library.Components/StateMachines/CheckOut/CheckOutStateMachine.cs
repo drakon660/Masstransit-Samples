@@ -5,8 +5,12 @@ namespace Library.Components.StateMachines.CheckOut;
 
 public class CheckOutStateMachine : MassTransitStateMachine<CheckOut>
 {
+    private readonly CheckOutSettings _settings;
+
     public CheckOutStateMachine(CheckOutSettings settings)
     {
+        _settings = settings;
+
         InstanceState(x => x.CurrentState);
 
         Event(() => BookCheckedOut, x =>
@@ -32,7 +36,7 @@ public class CheckOutStateMachine : MassTransitStateMachine<CheckOut>
                 context.Saga.BookId = context.Message.BookId;
                 context.Saga.MemberId = context.Message.MemberId;
                 context.Saga.CheckOutDate = context.Message.Timestamp;
-                context.Saga.DueDate = context.Message.Timestamp + settings.CheckOutDuration;
+                context.Saga.DueDate = context.Message.Timestamp + _settings.CheckOutDuration;
             })
             .Activity(x => x.OfInstanceType<NotifyMemberActivity>())
             .PublishAsync(x=>x.Init<AddBookToMemberCollection>(new
@@ -43,10 +47,10 @@ public class CheckOutStateMachine : MassTransitStateMachine<CheckOut>
             .TransitionTo(CheckedOut));
 
         During(CheckedOut, When(RenewCheckOutRequested)
-            .Then(context => { context.Saga.DueDate = DateTime.UtcNow + settings.CheckOutDuration; })
-            .IfElse(context => context.Saga.DueDate > context.Saga.CheckOutDate + settings.CheckOutDurationLimit,
+            .Then(context => { context.Saga.DueDate = DateTime.UtcNow + _settings.CheckOutDuration; })
+            .IfElse(context => context.Saga.DueDate > context.Saga.CheckOutDate + _settings.CheckOutDurationLimit,
                 exceeded => exceeded
-                    .Then(context => context.Saga.DueDate = context.Saga.CheckOutDate + settings.CheckOutDurationLimit)
+                    .Then(context => context.Saga.DueDate = context.Saga.CheckOutDate + _settings.CheckOutDurationLimit)
                     .RespondAsync(context => context.Init<CheckOutDurationLimitReached>(new
                     {
                         context.Message.CheckOutId,

@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
+
 namespace Library.Integration.Tests;
 
 public static class LibraryIntegrationTestConfigurationExtensions
@@ -38,11 +39,23 @@ public static class LibraryIntegrationTestConfigurationExtensions
         return services;
     }
 
-    public static async Task<ServiceProvider> CreateProvider(string connectionString)
+    public static async Task<ServiceProvider> CreateProvider(
+        string connectionString,
+        ITestOutputHelper testOutputHelper = null)
     {
         var services = new ServiceCollection();
-        Library.Integration.Tests.Xunit.XunitLoggingExtensions.UseSharedXunitLogging(services)
-            .ConfigureMassTransitWithPostgres(connectionString);
+
+        services.AddLogging(builder =>
+        {
+            builder.SetMinimumLevel(LogLevel.Debug);
+            builder.AddFilter("Microsoft.EntityFrameworkCore", LogLevel.Information);
+            builder.AddFilter("MassTransit", LogLevel.Debug);
+
+            if (testOutputHelper is not null)
+                builder.AddProvider(new XUnitLoggerProvider(testOutputHelper, appendScope: true));
+        });
+
+        services.ConfigureMassTransitWithPostgres(connectionString);
 
         var provider = services.BuildServiceProvider(true);
 

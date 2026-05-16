@@ -2,6 +2,7 @@
 using Library.Components.StateMachines.Book;
 using Library.Components.StateMachines.Reservation;
 using Library.Components.StateMachines.ThankYou;
+using Library.Components.Tests.Xunit;
 using Library.Contracts;
 using MassTransit;
 using MassTransit.Testing;
@@ -13,7 +14,7 @@ public class ThankYouStateMachineTests
 {
     public ThankYouStateMachineTests(ITestOutputHelper testOutputHelper)
     {
-        Library.Components.Tests.Xunit.TestOutputRelay.Use(testOutputHelper);
+        TestOutputRelay.Use(testOutputHelper);
     }
 
     [Fact]

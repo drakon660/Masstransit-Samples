@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using Library.Components.StateMachines.Book;
 using Library.Components.StateMachines.Reservation;
+using Library.Components.Tests.Xunit;
 using Library.Contracts;
 using MassTransit;
 using MassTransit.QuartzIntegration;
@@ -13,7 +14,7 @@ public class ReservationStateMachineTests
 {
     public ReservationStateMachineTests(ITestOutputHelper testOutputHelper)
     {
-        Library.Components.Tests.Xunit.TestOutputRelay.Use(testOutputHelper);
+        TestOutputRelay.Use(testOutputHelper);
     }
 
     [Fact]

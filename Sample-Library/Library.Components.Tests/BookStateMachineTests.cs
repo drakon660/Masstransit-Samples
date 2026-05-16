@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using Library.Components.StateMachines.Book;
+using Library.Components.Tests.Xunit;
 using Library.Contracts;
 using MassTransit;
 using MassTransit.Testing;
@@ -11,7 +12,7 @@ public class BookStateMachineTests
 {
     public BookStateMachineTests(ITestOutputHelper testOutputHelper)
     {
-        Library.Components.Tests.Xunit.TestOutputRelay.Use(testOutputHelper);
+        TestOutputRelay.Use(testOutputHelper);
     }
 
     [Fact]

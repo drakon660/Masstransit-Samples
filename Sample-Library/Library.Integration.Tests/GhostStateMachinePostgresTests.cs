@@ -7,21 +7,16 @@ using MassTransit.Testing;
 namespace Library.Integration.Tests;
 
 [Collection(nameof(PostgresCollection))]
-public class GhostStateMachinePostgresTests
+public class GhostStateMachinePostgresTests(PostgresFixture postgres, ITestOutputHelper testOutputHelper)
 {
-    private readonly PostgresFixture _postgres;
-
-    public GhostStateMachinePostgresTests(PostgresFixture postgres, ITestOutputHelper testOutputHelper)
-    {
-        _postgres = postgres;
-        Library.Integration.Tests.Xunit.TestOutputRelay.Use(testOutputHelper);
-    }
+    private readonly PostgresFixture _postgres = postgres;
+    private readonly ITestOutputHelper _testOutputHelper = testOutputHelper;
 
     [Fact]
     public async Task Should_Persist_Saga_To_Postgres()
     {
         await using var provider = await LibraryIntegrationTestConfigurationExtensions
-            .CreateProvider(_postgres.ConnectionString);
+            .CreateProvider(_postgres.ConnectionString, _testOutputHelper);
 
         var harness = provider.GetTestHarness();
         await harness.Start();
