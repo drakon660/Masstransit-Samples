@@ -7,6 +7,7 @@ public interface BookReturned
     DateTime Timestamp { get; }
 
     Guid MemberId { get; }
+    int MemberAge { get; }
     Guid BookId { get; }
 
     DateTime CheckOutDate { get; }

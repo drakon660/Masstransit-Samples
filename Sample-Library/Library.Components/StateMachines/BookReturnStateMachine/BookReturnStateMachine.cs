@@ -25,6 +25,7 @@ public class BookReturnStateMachine : MassTransitStateMachine<BookReturn>
                 {
                     context.Saga.BookId = context.Message.BookId;
                     context.Saga.MemberId = context.Message.MemberId;
+                    context.Saga.MemberAge = context.Message.MemberAge;
                     context.Saga.CheckOutDate = context.Message.Timestamp;
                     context.Saga.DueDate = context.Message.DueDate;
                     context.Saga.ReturnDate = context.Message.ReturnDate;
@@ -32,6 +33,7 @@ public class BookReturnStateMachine : MassTransitStateMachine<BookReturn>
                         late.Request(ChargeFine, context => context.Init<ChargeMemberFine>(new
                         {
                             context.Saga.MemberId,
+                            context.Saga.MemberAge,
                             Amount = 123.45m
                         })).TransitionTo(ChargingFine),
                     onTime => onTime.TransitionTo(Complete)));

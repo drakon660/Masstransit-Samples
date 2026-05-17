@@ -1,3 +1,4 @@
+using AwesomeAssertions;
 using Library.Components.Consumers;
 using Library.Components.StateMachines.BookReturnStateMachine;
 using Library.Components.Tests.Xunit;
@@ -16,7 +17,7 @@ public class BookReturnStateMachineTests
     }
 
     [Fact]
-    public async Task Should_Request_The_Fine_And_Handle_Waived_Response()
+    public async Task Should_Waive_The_Fine_For_A_Member_Under_18()
     {
         await using var provider = CreateProvider();
 
@@ -36,6 +37,7 @@ public class BookReturnStateMachineTests
             InVar.Timestamp,
             BookId = bookId,
             MemberId = memberId,
+            MemberAge = 17,
             CheckOutDate = now - TimeSpan.FromDays(28),
             DueDate = now - TimeSpan.FromDays(14),
             ReturnDate = now,
@@ -47,7 +49,7 @@ public class BookReturnStateMachineTests
         await harness.AssertConsumed<FineWaived>("Fine was not waived");
         
         // ChargeFine has a request timeout, so MassTransit schedules a timeout through Quartz.
-        // When FineCharged arrives, MassTransit sends Quartz a CancelScheduledMessage for that timeout.
+        // When a fine response arrives, MassTransit sends Quartz a CancelScheduledMessage for that timeout.
         // Wait for the bus to go idle so Quartz consumes the cancellation before the provider is disposed.
         await harness.InactivityTask;
     }
@@ -78,6 +80,7 @@ public class BookReturnStateMachineTests
             InVar.Timestamp,
             BookId = bookId,
             MemberId = memberId,
+            MemberAge = 17,
             CheckOutDate = now - TimeSpan.FromDays(28),
             DueDate = now - TimeSpan.FromDays(14),
             ReturnDate = now,
@@ -90,6 +93,30 @@ public class BookReturnStateMachineTests
         await sagaHarness.AssertState(checkOutId, x => x.FailedToFineMember,
             "Saga did not transition to the failed state");
         await harness.InactivityTask;
+    }
+
+    [Fact]
+    public async Task Should_Charge_The_Fine_When_The_Client_Does_Not_Accept_Fine_Waived()
+    {
+        await using var provider = CreateProvider();
+
+        var harness = provider.GetTestHarness();
+        await harness.Start();
+
+        var requestClient = harness.GetRequestClient<ChargeMemberFine>();
+        var memberId = NewId.NextGuid();
+
+        var response = await requestClient.GetResponse<FineCharged>(new
+        {
+            MemberId = memberId,
+            MemberAge = 17,
+            Amount = 123.45m
+        }, TestContext.Current.CancellationToken);
+
+        response.Message.MemberId.Should().Be(memberId);
+        response.Message.Amount.Should().Be(123.45m);
+        await harness.AssertConsumed<ChargeMemberFine>("Fine not consumed");
+        await harness.AssertConsumed<FineCharged>("Fine not charged");
     }
 
     private static ServiceProvider CreateProvider(

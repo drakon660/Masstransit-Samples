@@ -10,13 +10,14 @@ public class ChargeFineConsumer :
     {
         await Task.Delay(1000);
 
-        if (context.Message.Amount < 150m && context.IsResponseAccepted<FineWaived>())
+        // The request client must declare FineWaived as an accepted response type before we can return it.
+        if (context.Message.MemberAge < 18 && context.IsResponseAccepted<FineWaived>())
         {
             await context.RespondAsync<FineWaived>(new
             {
                 context.Message.MemberId,
                 context.Message.Amount,
-                Reason = "Fine is below the collection threshold"
+                Reason = "Member is under 18"
             });
             return;
         }

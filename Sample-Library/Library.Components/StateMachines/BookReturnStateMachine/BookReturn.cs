@@ -9,6 +9,7 @@ public class BookReturn :
 
     public Guid BookId { get; set; }
     public Guid MemberId { get; set; }
+    public int MemberAge { get; set; }
     public DateTime CheckOutDate { get; set; }
     public DateTime DueDate { get; set; }
     public DateTime ReturnDate { get; set; }
