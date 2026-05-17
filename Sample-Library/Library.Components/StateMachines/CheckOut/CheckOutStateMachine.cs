@@ -1,15 +1,18 @@
 using Library.Contracts;
 using MassTransit;
+using Microsoft.Extensions.Logging;
 
 namespace Library.Components.StateMachines.CheckOut;
 
 public class CheckOutStateMachine : MassTransitStateMachine<CheckOut>
 {
     private readonly CheckOutSettings _settings;
+    private readonly ILogger<CheckOutStateMachine> _logger;
 
-    public CheckOutStateMachine(CheckOutSettings settings)
+    public CheckOutStateMachine(CheckOutSettings settings, ILogger<CheckOutStateMachine> logger)
     {
         _settings = settings;
+        _logger = logger;
 
         InstanceState(x => x.CurrentState);
 
@@ -48,7 +51,7 @@ public class CheckOutStateMachine : MassTransitStateMachine<CheckOut>
 
         During(CheckedOut, When(RenewCheckOutRequested)
             .Then(context => { context.Saga.DueDate = DateTime.UtcNow + _settings.CheckOutDuration; })
-            .IfElse(context => context.Saga.DueDate > context.Saga.CheckOutDate + _settings.CheckOutDurationLimit,
+            .IfElse(context => context.Saga.DueDate >= context.Saga.CheckOutDate + _settings.CheckOutDurationLimit,
                 exceeded => exceeded
                     .Then(context => context.Saga.DueDate = context.Saga.CheckOutDate + _settings.CheckOutDurationLimit)
                     .RespondAsync(context => context.Init<CheckOutDurationLimitReached>(new
@@ -65,9 +68,10 @@ public class CheckOutStateMachine : MassTransitStateMachine<CheckOut>
                     }))));
 
         DuringAny(When(AddedToCollection).Then(x=>{}));
-        DuringAny(When(AddedToCollectionFaulted).Then(x =>
+        DuringAny(When(AddedToCollectionFaulted).Then(context =>
         {
-            Console.WriteLine("Add to collection faulted");
+            _logger.LogWarning("Add to collection faulted for CheckOut {CheckOutId}, Book {BookId}, Member {MemberId}",
+                context.Saga.CorrelationId, context.Saga.BookId, context.Saga.MemberId);
         }));
     }
 

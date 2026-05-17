@@ -184,7 +184,7 @@ public class CheckOutStateMachineTests
     
     
     [Fact]
-    public async Task When_CheckedOut_It_Should_Handle_the_fault_message_via_correlation()
+    public async Task When_CheckedOut_It_Should_Handle_The_Fault_Message_Via_Correlation()
     {
         await using var provider = CreateProvider(new TestCheckOutSettings { CheckOutDurationLimit = TimeSpan.FromDays(13) }, register:(
             x =>
