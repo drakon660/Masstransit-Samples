@@ -137,7 +137,7 @@ public class CheckOutStateMachineTests
 
         var requestClient = harness.GetRequestClient<RenewCheckOut>();
         
-        //why false, because we are not ready to send because I add new response types
+        // The client must accept CheckOutDurationLimitReached to receive that response type.
         Response<CheckOutRenewed, CheckOutNotFound, CheckOutDurationLimitReached> response =
             await requestClient.GetResponse<CheckOutRenewed, CheckOutNotFound, CheckOutDurationLimitReached>(new { checkOutId }, cts.Token);
 
