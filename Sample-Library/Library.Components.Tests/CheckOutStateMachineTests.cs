@@ -177,6 +177,9 @@ public class CheckOutStateMachineTests
 
         await harness.AssertPublished<AddBookToMemberCollection>("Add to Collection not published");
         await harness.AssertConsumed<AddBookToMemberCollection>("Add to Collection not consumed");
+        await harness.AssertPublished<BookAddedToMemberCollection>("Book was not added to the member collection");
+        await sagaHarness.AssertConsumed<BookAddedToMemberCollection, CheckOutStateMachine, CheckOut>(
+            "Completion event not consumed by saga");
     }
     
     

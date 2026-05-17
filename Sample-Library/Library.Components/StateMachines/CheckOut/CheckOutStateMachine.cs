@@ -74,7 +74,7 @@ public class CheckOutStateMachine : MassTransitStateMachine<CheckOut>
     public Event<BookCheckedOut> BookCheckedOut { get; }
     public Event<RenewCheckOut> RenewCheckOutRequested { get; }
     
-    public Event<AddBookToMemberCollection> AddedToCollection { get; }
+    public Event<BookAddedToMemberCollection> AddedToCollection { get; }
     public Event<Fault<AddBookToMemberCollection>> AddedToCollectionFaulted { get; }
 
     public State CheckedOut { get; }

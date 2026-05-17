@@ -26,7 +26,7 @@ public class BookStateMachine : MassTransitStateMachine<Book>
         During(Available, When(ReservationRequested).Then(context =>
         {
             context.Saga.ReservationId = context.Message.ReservationId;
-        }).TransitionTo(Reserved).PublishBookReserved().TransitionTo(Reserved));
+        }).TransitionTo(Reserved).PublishBookReserved());
         
         During(Reserved,
             When(ReservationRequested)
