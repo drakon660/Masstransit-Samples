@@ -47,7 +47,7 @@ public static class HarnessExtensions
             MemberId = memberId,
             InVar.Timestamp,
         }, TestContext.Current.CancellationToken);
-
+    
     public static Task PublishReservationCancellationRequested(
         this ITestHarness harness,
         Guid reservationId) =>

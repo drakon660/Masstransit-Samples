@@ -9,6 +9,7 @@ internal static class SharedXunitLoggerFactory
     {
         builder.SetMinimumLevel(LogLevel.Debug);
         builder.AddFilter("MassTransit", LogLevel.Debug);
+        builder.AddFilter("Quartz", LogLevel.None);
         builder.AddProvider(new XUnitLoggerProvider(TestOutputRelay.Shared, appendScope: true));
     });
 }
