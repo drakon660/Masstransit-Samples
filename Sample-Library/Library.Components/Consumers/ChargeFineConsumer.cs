@@ -10,6 +10,17 @@ public class ChargeFineConsumer :
     {
         await Task.Delay(1000);
 
+        if (context.Message.Amount < 150m && context.IsResponseAccepted<FineWaived>())
+        {
+            await context.RespondAsync<FineWaived>(new
+            {
+                context.Message.MemberId,
+                context.Message.Amount,
+                Reason = "Fine is below the collection threshold"
+            });
+            return;
+        }
+
         await context.RespondAsync<FineCharged>(context.Message);
     }
 }

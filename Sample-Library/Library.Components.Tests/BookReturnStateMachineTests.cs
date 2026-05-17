@@ -16,7 +16,7 @@ public class BookReturnStateMachineTests
     }
 
     [Fact]
-    public async Task Should_Request_The_Fine_By_Charged()
+    public async Task Should_Request_The_Fine_And_Handle_Waived_Response()
     {
         await using var provider = CreateProvider();
 
@@ -44,7 +44,7 @@ public class BookReturnStateMachineTests
         await sagaHarness.AssertCreated(checkOutId);
         
         await harness.AssertConsumed<ChargeMemberFine>("Fine not consumed");
-        await harness.AssertConsumed<FineCharged>("Fine not charged");
+        await harness.AssertConsumed<FineWaived>("Fine was not waived");
         
         // ChargeFine has a request timeout, so MassTransit schedules a timeout through Quartz.
         // When FineCharged arrives, MassTransit sends Quartz a CancelScheduledMessage for that timeout.

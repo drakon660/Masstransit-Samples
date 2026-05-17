@@ -38,15 +38,16 @@ public class BookReturnStateMachine : MassTransitStateMachine<BookReturn>
 
         During(ChargingFine, 
             When(ChargeFine.Completed).TransitionTo(Complete),
+            When(ChargeFine.Completed2).TransitionTo(Complete),
             When(ChargeFine.Faulted).TransitionTo(FailedToFineMember),
             When(ChargeFine.TimeoutExpired).TransitionTo(FailedToFineMember)
         );
     }
 
-    public State ChargingFine { get; } = null!;
-    public State FailedToFineMember { get; } = null!;
-    public State Complete { get; } = null!;
-    public Event<BookReturned> BookReturned { get; } = null!;
+    public State ChargingFine { get; } 
+    public State FailedToFineMember { get; } 
+    public State Complete { get; } 
+    public Event<BookReturned> BookReturned { get; }
 
-    public Request<BookReturn, ChargeMemberFine, FineCharged> ChargeFine { get; } = null!;
+    public Request<BookReturn, ChargeMemberFine, FineCharged, FineWaived> ChargeFine { get; } 
 }
