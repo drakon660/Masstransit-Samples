@@ -29,13 +29,15 @@ public class ThankYouStateMachine : MassTransitStateMachine<ThankYou>
 
         Event(() => GetStatus, x =>
         {
-            x.CorrelateBy((instance, context) => context.Message.MemberId == instance.MemberId);
+            x.CorrelateBy((instance, context) =>
+                context.Message.MemberId == instance.MemberId && context.Message.BookId == instance.BookId);
             x.ReadOnly = true;
 
             x.OnMissingInstance(m => 
                 m.ExecuteAsync(context => context.RespondAsync<ThankYouStatus>(new
                 {
                     context.Message.MemberId,
+                    context.Message.BookId,
                     Status = "Not Found"
                 })));
         });

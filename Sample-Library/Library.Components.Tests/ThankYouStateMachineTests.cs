@@ -146,7 +146,9 @@ public class ThankYouStateMachineTests
 
         instance.Should().NotBeNull();
         
-        var response = await requestClient.GetResponse<ThankYouStatus>(new { MemberId = memberId }, TestContext.Current.CancellationToken);
+        var response = await requestClient.GetResponse<ThankYouStatus>(
+            new { MemberId = memberId, BookId = bookId },
+            TestContext.Current.CancellationToken);
         
         response.Message.Status.Should().Be("Active");
         response.Message.MemberId.Should().Be(memberId);
@@ -164,7 +166,9 @@ public class ThankYouStateMachineTests
         await sagaHarness.AssertConsumed<BookReserved, ThankYouStateMachine, ThankYou>(
             filter => filter.Context.Message.BookId == bookId, "Message not consumed by saga");
 
-        response = await requestClient.GetResponse<ThankYouStatus>(new { MemberId = memberId }, TestContext.Current.CancellationToken);
+        response = await requestClient.GetResponse<ThankYouStatus>(
+            new { MemberId = memberId, BookId = bookId },
+            TestContext.Current.CancellationToken);
 
         response.Message.Status.Should().Be("Ready");
         response.Message.MemberId.Should().Be(memberId);
@@ -182,15 +186,57 @@ public class ThankYouStateMachineTests
 
         var requestClient = harness.GetRequestClient<GetThankYouStatus>();
         
-        var notFound = InVar.CorrelationId;
+        var notFoundMemberId = NewId.NextGuid();
+        var notFoundBookId = NewId.NextGuid();
         
         var response =
-            await requestClient.GetResponse<ThankYouStatus>(new { MemberId = notFound }, TestContext.Current.CancellationToken);
+            await requestClient.GetResponse<ThankYouStatus>(
+                new { MemberId = notFoundMemberId, BookId = notFoundBookId },
+                TestContext.Current.CancellationToken);
         
-        response.Message.MemberId.Should().Be(notFound);
+        response.Message.MemberId.Should().Be(notFoundMemberId);
+        response.Message.BookId.Should().Be(notFoundBookId);
         response.Message.Status.Should().Be("Not Found");
         
         response.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task Should_Return_Status_For_The_Requested_Book_When_Member_Has_Multiple_Sagas()
+    {
+        await using var provider = CreateProvider();
+
+        var harness = provider.GetTestHarness();
+        await harness.Start();
+
+        var memberId = NewId.NextGuid();
+        var firstBookId = NewId.NextGuid();
+        var secondBookId = NewId.NextGuid();
+        var requestClient = harness.GetRequestClient<GetThankYouStatus>();
+
+        await harness.Bus.Publish<BookCheckedOut>(new
+        {
+            CheckOutId = NewId.NextGuid(),
+            MemberId = memberId,
+            BookId = firstBookId,
+            InVar.Timestamp
+        }, TestContext.Current.CancellationToken);
+
+        await harness.Bus.Publish<BookCheckedOut>(new
+        {
+            CheckOutId = NewId.NextGuid(),
+            MemberId = memberId,
+            BookId = secondBookId,
+            InVar.Timestamp
+        }, TestContext.Current.CancellationToken);
+
+        var response = await requestClient.GetResponse<ThankYouStatus>(
+            new { MemberId = memberId, BookId = secondBookId },
+            TestContext.Current.CancellationToken);
+
+        response.Message.MemberId.Should().Be(memberId);
+        response.Message.BookId.Should().Be(secondBookId);
+        response.Message.Status.Should().Be("Active");
     }
     
 

@@ -3,4 +3,5 @@
 public interface GetThankYouStatus
 {
     Guid MemberId { get; }
+    Guid BookId { get; }
 }
