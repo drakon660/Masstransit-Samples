@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build *)",
+      "Bash(grep -E \"^\\(Link|Up|Down|Unlink\\)\\\\`1$\")",
+      "Bash(curl -s \"https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore/index.json\")"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "claude",
+    "caveman"
+  ]
+}
