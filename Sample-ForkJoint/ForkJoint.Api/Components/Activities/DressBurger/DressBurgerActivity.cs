@@ -12,7 +12,7 @@ public class DressBurgerActivity :
 
     public async Task<ExecutionResult> Execute(ExecuteContext<DressBurgerArguments> context)
     {
-        _logger.LogDebug("Dressing Burger: {OrderId} {Ketchup}", context.Arguments.OrderId, context.Arguments.Ketchup);
+        _logger.LogInformation("Dressing Burger: {OrderId} {Ketchup}", context.Arguments.OrderId, context.Arguments.Ketchup);
 
         await Task.Delay(1000);
 

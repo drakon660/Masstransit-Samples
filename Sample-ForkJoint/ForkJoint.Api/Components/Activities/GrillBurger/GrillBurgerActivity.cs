@@ -12,7 +12,7 @@ public class GrillBurgerActivity :
 
     public async Task<ExecutionResult> Execute(ExecuteContext<GrillBurgerArguments> context)
     {
-        _logger.LogDebug("Grilling Burger: {OrderId} {Weight}", context.Arguments.OrderId, context.Arguments.Weight);
+        _logger.LogInformation("Grilling Burger: {OrderId} {Weight}", context.Arguments.OrderId, context.Arguments.Weight);
 
         await Task.Delay(5000);
 

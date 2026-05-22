@@ -11,7 +11,7 @@ builder.Services.AddMassTransit(x =>
     x.SetKebabCaseEndpointNameFormatter();
 
     x.AddConsumersFromNamespaceContaining<SubmitOrderConsumer>();
-    x.AddActivitiesFromNamespaceContaining<GrillBurgerActivity>();
+    x.AddActivitiesFromNamespaceContaining<ForkJoint.Api.Components.Activities.CourierActivities>();
 
     x.AddRequestClient<SubmitOrder>();
 

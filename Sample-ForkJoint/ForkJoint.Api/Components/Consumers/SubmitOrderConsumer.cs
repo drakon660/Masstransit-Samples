@@ -30,7 +30,7 @@ public class SubmitOrderConsumer :
             await context.RespondAsync<OrderSubmissionAccepted>(new {context.Message.OrderId});
     }
 
-    RoutingSlip CreateRoutingSlip(SubmitOrder submitOrder)
+    private RoutingSlip CreateRoutingSlip(SubmitOrder submitOrder)
     {
         var builder = new RoutingSlipBuilder(NewId.NextGuid());
 
