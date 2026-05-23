@@ -12,8 +12,12 @@ public class DressBurgerActivity :
 
     public async Task<ExecutionResult> Execute(ExecuteContext<DressBurgerArguments> context)
     {
-        _logger.LogInformation("Dressing Burger: {OrderId} {Ketchup}", context.Arguments.OrderId, context.Arguments.Ketchup);
+        _logger.LogInformation("Dressing Burger: {OrderId} {Ketchup} {Lettuce}", context.Arguments.OrderId, context.Arguments.Ketchup,
+            context.Arguments.Lettuce);
 
+        if (context.Arguments.Lettuce)
+            throw new InvalidOperationException("No lettuce available");
+        
         await Task.Delay(1000);
 
         return context.Completed();

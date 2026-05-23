@@ -1,55 +1,47 @@
-﻿using ForkJoint.Api.Components.Activities.DressBurger;
-using ForkJoint.Api.Components.Activities.GrillBurger;
-using ForkJoint.Contracts;
-using MassTransit;
-using MassTransit.Courier.Contracts;
+using ForkJoint.Api.Components.Activities.ItineraryPlanners;
 
 namespace ForkJoint.Api.Components.Consumers;
 
 public class SubmitOrderConsumer :
-    IConsumer<SubmitOrder>
+    RoutingSlipRequestConsumer<SubmitOrder>
 {
-    readonly IEndpointNameFormatter _formatter;
+    readonly IBurgerItineraryPlanner _planner;
     readonly ILogger<SubmitOrderConsumer> _logger;
 
-    public SubmitOrderConsumer(ILogger<SubmitOrderConsumer> logger, IEndpointNameFormatter formatter)
+    public SubmitOrderConsumer(IBurgerItineraryPlanner planner, IEndpointNameFormatter formatter, ILogger<SubmitOrderConsumer> logger)
+        : base(formatter.Consumer<SubmitOrderResponseConsumer>())
     {
+        _planner = planner;
         _logger = logger;
-        _formatter = formatter;
     }
 
-    public async Task Consume(ConsumeContext<SubmitOrder> context)
+    protected override Task BuildItinerary(RoutingSlipBuilder builder, ConsumeContext<SubmitOrder> context)
     {
-        _logger.LogInformation("Order Submission Received: {OrderId} {CorrelationId}", context.Message.OrderId, context.CorrelationId);
+        _logger.LogInformation("BuildItinerary: OrderId={OrderId} CorrelationId={CorrelationId} RequestId={RequestId} ResponseAddress={ResponseAddress} Burgers={Count}",
+            context.Message.OrderId, context.CorrelationId, context.RequestId, context.ResponseAddress,
+            context.Message.Burgers?.Length ?? 0);
 
-        var routingSlip = CreateRoutingSlip(context.Message);
+        builder.AddVariable("OrderId", context.Message.OrderId);
 
-        await context.Execute(routingSlip);
-
-        if (context.ResponseAddress != null)
-            await context.RespondAsync<OrderSubmissionAccepted>(new {context.Message.OrderId});
-    }
-
-    private RoutingSlip CreateRoutingSlip(SubmitOrder submitOrder)
-    {
-        var builder = new RoutingSlipBuilder(NewId.NextGuid());
-
-        builder.AddVariable("OrderId", submitOrder.OrderId);
-        
-        var grillQueueName = _formatter.ExecuteActivity<GrillBurgerActivity, GrillBurgerArguments>();
-        builder.AddActivity("grill-burger", new Uri($"queue:{grillQueueName}"), new
+        if (context.ExpirationTime.HasValue)
         {
-            Weight = 0.5m,
-            Temperature = 165.0m
-        });
+            _logger.LogInformation("Adding Deadline variable: {Deadline}", context.ExpirationTime.Value);
+            builder.AddVariable("Deadline", context.ExpirationTime.Value);
+        }
 
-        var dressQueueName = _formatter.ExecuteActivity<DressBurgerActivity, DressBurgerArguments>();
-        builder.AddActivity("dress-burger", new Uri($"queue:{dressQueueName}"), new
+        var burger = context.Message.Burgers?.FirstOrDefault();
+
+        if (burger != null)
         {
-            Ketchup = true,
-            Lettuce = true,
-        });
+            _logger.LogInformation("Planning itinerary for burger: Lettuce={Lettuce} Cheese={Cheese} Weight={Weight}",
+                burger.Lettuce, burger.Cheese, burger.Weight);
+            _planner.PlanItinerary(burger, builder);
+        }
+        else
+        {
+            _logger.LogWarning("No burger in request — empty itinerary.");
+        }
 
-        return builder.Build();
+        return Task.CompletedTask;
     }
 }

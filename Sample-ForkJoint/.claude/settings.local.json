@@ -3,7 +3,10 @@
     "allow": [
       "Bash(dotnet build *)",
       "Bash(grep -E \"^\\(Link|Up|Down|Unlink\\)\\\\`1$\")",
-      "Bash(curl -s \"https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore/index.json\")"
+      "Bash(curl -s \"https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore/index.json\")",
+      "Bash(grep -ao \"GetVariable\\\\`\\\\?[0-9]*\\\\|TryGetVariable\" /c/Users/drakon660/.nuget/packages/masstransit/8.5.9/lib/net10.0/MassTransit.dll)",
+      "Bash(grep -ao \"ConsumeContext\\\\`1<RoutingSlipCompleted>\\\\|ConsumeContext\\\\`1<RoutingSlipFaulted>\" /c/Users/drakon660/.nuget/packages/masstransit/8.5.9/lib/net10.0/MassTransit.dll)",
+      "Bash(grep -ao \"FaultEvent\\\\`\\\\?[0-9]*\\\\.ctor\\\\|FaultEvent..ctor\" /c/Users/drakon660/.nuget/packages/masstransit/8.5.9/lib/net10.0/MassTransit.dll)"
     ]
   },
   "enabledMcpjsonServers": [

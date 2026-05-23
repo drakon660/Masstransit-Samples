@@ -2,14 +2,17 @@
 
 namespace ForkJoint.Contracts;
 
-public interface SubmitOrder
+public interface OrderNotCompleted
 {
     Guid OrderId { get; }
+
+    string Reason { get; }
+
     Burger[] Burgers { get; }
 
     [ModuleInitializer]
     internal static void Init()
     {
-        GlobalTopology.Send.UseCorrelationId<SubmitOrder>(x => x.OrderId);
+        GlobalTopology.Send.UseCorrelationId<OrderNotCompleted>(x => x.OrderId);
     }
 }

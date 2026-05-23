@@ -1,7 +1,12 @@
 namespace ForkJoint.Api.Modules;
 
-public record SubmitOrderRequest(Guid OrderId);
+public record SubmitOrderRequest(Guid OrderId, bool Lettuce);
 
+// POST /orders → IRequestClient<SubmitOrder> → SubmitOrderConsumer (RoutingSlipRequestConsumer<SubmitOrder>).
+// The consumer builds a routing slip via BurgerItineraryPlanner and executes activities (grill, dress).
+// Response (OrderCompleted / OrderNotCompleted) is sent back by SubmitOrderResponseConsumer
+// (a RoutingSlipResponseConsumer subscribed to RoutingSlipCompleted / RoutingSlipFaulted).
+// No saga state machine is involved — pure consumer + routing slip orchestration.
 public class SubmitOrderModule : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
@@ -13,10 +18,23 @@ public class SubmitOrderModule : ICarterModule
         {
             var orderId = request.OrderId == Guid.Empty ? NewId.NextGuid() : request.OrderId;
 
-            var response = await client.GetResponse<OrderSubmissionAccepted>(
-                new { OrderId = orderId }, cancellationToken);
+            var response = await client.GetResponse<OrderCompleted, OrderNotCompleted>(
+                new
+                {
+                    OrderId = orderId,
+                    Burgers = new[] { new Burger { Lettuce = request.Lettuce } }
+                }, cancellationToken);
 
-            return Results.Accepted($"/orders/{response.Message.OrderId}", response.Message);
+            if (response.Is<OrderCompleted>(out var completed))
+                return Results.Ok(completed.Message);
+
+            if (response.Is<OrderNotCompleted>(out var notCompleted))
+                return Results.Problem(
+                    title: "Order not completed",
+                    detail: notCompleted.Message.Reason,
+                    statusCode: StatusCodes.Status422UnprocessableEntity);
+
+            return Results.Problem("Unexpected response", statusCode: StatusCodes.Status500InternalServerError);
         });
     }
 }

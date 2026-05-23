@@ -2,14 +2,15 @@
 
 namespace ForkJoint.Contracts;
 
-public interface SubmitOrder
+public interface BurgerCompleted
 {
     Guid OrderId { get; }
-    Burger[] Burgers { get; }
+
+    Burger Burger { get; }
 
     [ModuleInitializer]
     internal static void Init()
     {
-        GlobalTopology.Send.UseCorrelationId<SubmitOrder>(x => x.OrderId);
+        GlobalTopology.Send.UseCorrelationId<BurgerCompleted>(x => x.Burger.BurgerId);
     }
 }
