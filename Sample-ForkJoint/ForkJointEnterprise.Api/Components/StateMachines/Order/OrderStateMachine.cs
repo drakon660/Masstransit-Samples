@@ -1,5 +1,3 @@
-using ForkJointEnterprise.Api.Components.StateMachines.Order;
-
 namespace ForkJointEnterprise.Api.Components.StateMachines;
 
 public class OrderStateMachine :
@@ -19,14 +17,37 @@ public class OrderStateMachine :
                 .InitializeFuture()
                 .Then(context =>
                 {
+                    context.Saga.LineCount = 0;
+
                     if (context.Message.Burgers != null)
                     {
-                        context.Saga.LineCount = context.Message.Burgers.Length;
+                        context.Saga.LineCount += context.Message.Burgers.Length;
                         context.Saga.LinesPending.UnionWith(context.Message.Burgers.Select(x => x.BurgerId));
+                    }
+
+                    if (context.Message.Fries != null)
+                    {
+                        context.Saga.LineCount += context.Message.Fries.Length;
+                        context.Saga.LinesPending.UnionWith(context.Message.Fries.Select(x => x.FryId));
+                    }
+
+                    if (context.Message.Shakes != null)
+                    {
+                        context.Saga.LineCount += context.Message.Shakes.Length;
+                        context.Saga.LinesPending.UnionWith(context.Message.Shakes.Select(x => x.ShakeId));
+                    }
+
+                    if (context.Message.FryShakes != null)
+                    {
+                        context.Saga.LineCount += context.Message.FryShakes.Length;
+                        context.Saga.LinesPending.UnionWith(context.Message.FryShakes.Select(x => x.FryShakeId));
                     }
                 })
                 .LogSeeded(logger)
-                .Activity(x => x.OfType<RequestBurgerActivity>())
+                .Activity(x => x.OfType<OrderBurgersActivity>())
+                .Activity(x => x.OfType<OrderFriesActivity>())
+                .Activity(x => x.OfType<OrderShakesActivity>())
+                .Activity(x => x.OfType<OrderFryShakesActivity>())
                 .LogFanOutDone(logger)
                 .TransitionTo(WaitingForCompletion)
         );
@@ -80,7 +101,7 @@ public static class OrderStateMachineExtensions
             context.Saga.LinesPending.Remove(context.Message.OrderLineId);
             context.Saga.LinesFaulted.Remove(context.Message.OrderLineId);
 
-            context.Saga.LinesCompleted.Add(context.Message.OrderLineId, context.Message);
+            context.Saga.LinesCompleted[context.Message.OrderLineId] = context.Message;
         });
     }
 
@@ -90,7 +111,7 @@ public static class OrderStateMachineExtensions
         {
             context.Saga.LinesPending.Remove(context.Message.OrderLineId);
 
-            context.Saga.LinesFaulted.Add(context.Message.OrderLineId, context.Message);
+            context.Saga.LinesFaulted[context.Message.OrderLineId] = context.Message;
         });
     }
 

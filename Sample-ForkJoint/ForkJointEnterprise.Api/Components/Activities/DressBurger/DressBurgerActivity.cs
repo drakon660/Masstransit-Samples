@@ -1,25 +1,60 @@
-﻿namespace ForkJointEnterprise.Api.Components.Activities.DressBurger;
+namespace ForkJointEnterprise.Api.Components.Activities.DressBurger;
 
 public class DressBurgerActivity :
     IExecuteActivity<DressBurgerArguments>
 {
     readonly ILogger<DressBurgerActivity> _logger;
+    readonly IRequestClient<OrderOnionRings> _onionRingClient;
 
-    public DressBurgerActivity(ILogger<DressBurgerActivity> logger)
+    public DressBurgerActivity(ILogger<DressBurgerActivity> logger, IRequestClient<OrderOnionRings> onionRingClient)
     {
         _logger = logger;
+        _onionRingClient = onionRingClient;
     }
 
     public async Task<ExecutionResult> Execute(ExecuteContext<DressBurgerArguments> context)
     {
-        _logger.LogInformation("Dressing Burger: {OrderId} {Ketchup} {Lettuce}", context.Arguments.OrderId, context.Arguments.Ketchup,
-            context.Arguments.Lettuce);
+        var arguments = context.Arguments;
 
-        if (context.Arguments.Lettuce)
+        var patty = arguments.Patty;
+        if (patty == null)
+            throw new ArgumentNullException(nameof(arguments.Patty));
+
+        _logger.LogInformation("Dressing Burger: {OrderId} {Ketchup} {Lettuce}", arguments.OrderId, arguments.Ketchup,
+            arguments.Lettuce);
+
+        if (arguments.Lettuce)
             throw new InvalidOperationException("No lettuce available");
-        
-        await Task.Delay(1000);
 
-        return context.Completed();
+        if (arguments.OnionRing)
+        {
+            _logger.LogInformation("Ordering Onion Ring: {BurgerId}", arguments.BurgerId);
+
+            var response = await _onionRingClient.GetResponse<OnionRingsCompleted, OnionRingsFaulted>(new
+            {
+                arguments.OrderId,
+                OrderLineId = arguments.BurgerId,
+                Quantity = 1
+            }, context.CancellationToken);
+
+            if (response.Is(out Response<OnionRingsFaulted>? faulted))
+                throw new InvalidOperationException($"The onion ring was not available: {faulted.Message.ExceptionInfo?.Message}");
+        }
+
+        var burger = new Burger
+        {
+            BurgerId = arguments.BurgerId,
+            Weight = patty.Weight,
+            Cheese = patty.Cheese,
+            Lettuce = arguments.Lettuce,
+            Onion = arguments.Onion,
+            Pickle = arguments.Pickle,
+            Ketchup = arguments.Ketchup,
+            Mustard = arguments.Mustard,
+            BarbecueSauce = arguments.BarbecueSauce,
+            OnionRing = arguments.OnionRing
+        };
+
+        return context.CompletedWithVariables(new { burger });
     }
 }

@@ -12,4 +12,6 @@ public interface DressBurgerArguments
     bool Onion { get; }
     bool Ketchup { get; }
     bool Mustard { get; }
+    bool BarbecueSauce { get; }
+    bool OnionRing { get; }
 }

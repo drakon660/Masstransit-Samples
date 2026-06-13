@@ -6,7 +6,21 @@
       "Bash(curl -s \"https://api.nuget.org/v3-flatcontainer/swashbuckle.aspnetcore/index.json\")",
       "Bash(grep -ao \"GetVariable\\\\`\\\\?[0-9]*\\\\|TryGetVariable\" /c/Users/drakon660/.nuget/packages/masstransit/8.5.9/lib/net10.0/MassTransit.dll)",
       "Bash(grep -ao \"ConsumeContext\\\\`1<RoutingSlipCompleted>\\\\|ConsumeContext\\\\`1<RoutingSlipFaulted>\" /c/Users/drakon660/.nuget/packages/masstransit/8.5.9/lib/net10.0/MassTransit.dll)",
-      "Bash(grep -ao \"FaultEvent\\\\`\\\\?[0-9]*\\\\.ctor\\\\|FaultEvent..ctor\" /c/Users/drakon660/.nuget/packages/masstransit/8.5.9/lib/net10.0/MassTransit.dll)"
+      "Bash(grep -ao \"FaultEvent\\\\`\\\\?[0-9]*\\\\.ctor\\\\|FaultEvent..ctor\" /c/Users/drakon660/.nuget/packages/masstransit/8.5.9/lib/net10.0/MassTransit.dll)",
+      "Bash(xargs grep -l \"OrderStateMachine\\\\|OrderState\\\\b\")",
+      "Bash(git mv *)",
+      "Bash(mkdir -p Order Burger)",
+      "Bash(mv OrderStateMachine.cs OrderState.cs OrderSagaDefinition.cs OrderStateMachineLoggingExtensions.cs RequestBurgerActivity.cs Order/)",
+      "Bash(mv BurgerStateMachine.cs BurgerState.cs BurgerSagaDefinition.cs BurgerStateMachineLoggingExtensions.cs PrepareBurgerActivity.cs Burger/)",
+      "Bash(grep -v \"^obj$\")",
+      "Bash(grep -v \"^Extensions$\")",
+      "Bash(grep \"\\\\.cs$\")",
+      "Bash(xargs -I {} basename {})",
+      "Bash(xargs basename -a)",
+      "Bash(tree \"F:\\\\src\\\\Masstransit-Samples\\\\Sample-ForkJoint\\\\old\" -I \"bin|obj\")",
+      "Read(//tmp/**)",
+      "Bash(dotnet list *)",
+      "Bash(dotnet tool *)"
     ]
   },
   "enabledMcpjsonServers": [

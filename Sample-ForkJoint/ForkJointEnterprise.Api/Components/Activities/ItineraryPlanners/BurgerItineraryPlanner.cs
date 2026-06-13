@@ -38,7 +38,9 @@ public class BurgerItineraryPlanner : IBurgerItineraryPlanner
             burger.Pickle,
             burger.Onion,
             burger.Ketchup,
-            burger.Mustard
+            burger.Mustard,
+            burger.BarbecueSauce,
+            burger.OnionRing
         });
     }
 }

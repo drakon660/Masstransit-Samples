@@ -1,18 +1,39 @@
 using ForkJointEnterprise.Api.Components.Activities.DressBurger;
 using ForkJointEnterprise.Api.Components.Activities.GrillBurger;
 using ForkJointEnterprise.Api.Components.Activities.ItineraryPlanners;
+using ForkJointEnterprise.Api.Components.Consumers;
 using ForkJointEnterprise.Api.Components.StateMachines;
 using ForkJointEnterprise.Api.Services;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
+using ForkJointEnterprise.Api;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(r => r.AddService("ForkJointEnterprise"))
+    .WithTracing(tracing =>
+    {
+        tracing
+            .AddSource("MassTransit")
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation()
+            .AddOtlpExporter(o => o.Endpoint = new Uri("http://localhost:4317"));
+    });
+
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SchemaFilter<UniqueGuidSchemaFilter>();
+});
 builder.Services.AddCarter();
 
 builder.Services.TryAddScoped<IBurgerItineraryPlanner, BurgerItineraryPlanner>();
 builder.Services.TryAddSingleton<IGrill, Grill>();
+builder.Services.TryAddSingleton<IFryer, Fryer>();
+builder.Services.TryAddSingleton<IShakeMachine, ShakeMachine>();
 
 builder.Services.AddMassTransit(x =>
 {
@@ -23,8 +44,25 @@ builder.Services.AddMassTransit(x =>
     x.AddActivity<GrillBurgerActivity, GrillBurgerArguments, GrillBurgerLog>();
     x.AddExecuteActivity<DressBurgerActivity, DressBurgerArguments>();
 
+    // Consumers
+    x.AddConsumer<CookFryConsumer>();
+    x.AddConsumer<PourShakeConsumer>();
+    x.AddConsumer<CookOnionRingsConsumer>();
+
     // Sagas
     x.AddSagaStateMachine<BurgerStateMachine, BurgerState, BurgerSagaDefinition>()
+        .InMemoryRepository();
+
+    x.AddSagaStateMachine<FryStateMachine, FryState, FrySagaDefinition>()
+        .InMemoryRepository();
+
+    x.AddSagaStateMachine<ShakeStateMachine, ShakeState, ShakeSagaDefinition>()
+        .InMemoryRepository();
+
+    x.AddSagaStateMachine<FryShakeStateMachine, FryShakeState, FryShakeSagaDefinition>()
+        .InMemoryRepository();
+
+    x.AddSagaStateMachine<OnionRingsStateMachine, OnionRingsState, OnionRingsSagaDefinition>()
         .InMemoryRepository();
 
     x.AddSagaStateMachine<OrderStateMachine, OrderState, OrderSagaDefinition>()
@@ -36,6 +74,7 @@ builder.Services.AddMassTransit(x =>
 
     // Request clients
     x.AddRequestClient<SubmitOrder>();
+    x.AddRequestClient<OrderOnionRings>();
 
     x.UsingRabbitMq((context, cfg) =>
     {

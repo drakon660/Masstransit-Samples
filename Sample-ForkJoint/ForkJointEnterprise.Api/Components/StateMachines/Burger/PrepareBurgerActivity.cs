@@ -53,6 +53,16 @@ public class PrepareBurgerActivity :
 
         _planner.PlanItinerary(context.Saga.Burger, builder);
 
+        if (context.Saga.Burger is { OnionRing: true })
+        {
+            await context.Publish<OrderOnionRings>(new
+            {
+                context.Saga.OrderId,
+                OrderLineId = context.Saga.Burger.BurgerId,
+                Quantity = 1
+            });
+        }
+
         await context.Execute(builder.Build()).ConfigureAwait(false);
 
         context.Saga.TrackingNumber = trackingNumber;

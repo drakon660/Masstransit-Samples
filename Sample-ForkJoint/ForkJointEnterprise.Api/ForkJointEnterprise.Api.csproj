@@ -11,6 +11,10 @@
         <PackageReference Include="MassTransit.RabbitMQ" />
         <PackageReference Include="Carter" />
         <PackageReference Include="Swashbuckle.AspNetCore" />
+        <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.Http" />
     </ItemGroup>
 
     <ItemGroup>
@@ -18,7 +22,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Folder Include="Components\Consumers\" />
         <Folder Include="Modules\" />
     </ItemGroup>
 

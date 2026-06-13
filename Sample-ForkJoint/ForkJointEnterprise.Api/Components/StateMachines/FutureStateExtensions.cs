@@ -72,6 +72,42 @@
         }
 
         /// <summary>
+        /// Complete the request (no event message variant, for CompositeEvent).
+        /// </summary>
+        public static EventActivityBinder<TState> SetCompleted<TState, TResponse>(this EventActivityBinder<TState> binder,
+            AsyncEventMessageFactory<TState, TResponse> asyncMessageFactory)
+            where TState : FutureState
+            where TResponse : class
+        {
+            return binder
+                .Then(context => context.Instance.Completed = context.SentTime ?? DateTime.UtcNow)
+                .If(context => context.Instance.RequestId.HasValue,
+                    respond => respond.SendAsync(context => context.Instance.ResponseAddress, asyncMessageFactory, (consumeContext, sendContext) =>
+                    {
+                        sendContext.RequestId = consumeContext.Instance.RequestId;
+                    }))
+                .PublishAsync(asyncMessageFactory);
+        }
+
+        /// <summary>
+        /// Fault the request (no event message variant, for CompositeEvent).
+        /// </summary>
+        public static EventActivityBinder<TState> SetFaulted<TState, TResponse>(this EventActivityBinder<TState> binder,
+            AsyncEventMessageFactory<TState, TResponse> asyncMessageFactory)
+            where TState : FutureState
+            where TResponse : class
+        {
+            return binder
+                .Then(context => context.Instance.Faulted = context.SentTime ?? DateTime.UtcNow)
+                .If(context => context.Instance.RequestId.HasValue,
+                    respond => respond.SendAsync(context => context.Instance.ResponseAddress, asyncMessageFactory, (consumeContext, sendContext) =>
+                    {
+                        sendContext.RequestId = consumeContext.Instance.RequestId;
+                    }))
+                .PublishAsync(asyncMessageFactory);
+        }
+
+        /// <summary>
         /// Use when a request is received after the initial request is still awaiting completion
         /// </summary>
         /// <param name="binder"></param>

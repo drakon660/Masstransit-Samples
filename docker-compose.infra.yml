@@ -52,14 +52,14 @@ services:
     tmpfs:
       - /data
 
-  jaeger:
-    image: jaegertracing/all-in-one:latest
+  aspire-dashboard:
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:latest
     environment:
-      - COLLECTOR_OTLP_ENABLED=true
+      - DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS=true
     ports:
-      - "16686:16686"   # Web UI
-      - "4317:4317"     # OTLP gRPC
-      - "4318:4318"     # OTLP HTTP
+      - "18888:18888"   # Web UI
+      - "4317:18889"    # OTLP gRPC
+      - "4318:18890"    # OTLP HTTP
 
 volumes:
   mongo-data:
