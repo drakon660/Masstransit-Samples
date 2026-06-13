@@ -35,6 +35,7 @@ public class SubmitOrderConsumer :
         {
             _logger.LogInformation("Planning itinerary for burger: Lettuce={Lettuce} Cheese={Cheese} Weight={Weight}",
                 burger.Lettuce, burger.Cheese, burger.Weight);
+            builder.AddVariable("Burger", burger);
             _planner.PlanItinerary(burger, builder);
         }
         else

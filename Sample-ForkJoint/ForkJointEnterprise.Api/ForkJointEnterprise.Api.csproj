@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="MassTransit" />
+        <PackageReference Include="MassTransit.RabbitMQ" />
+        <PackageReference Include="Carter" />
+        <PackageReference Include="Swashbuckle.AspNetCore" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\ForkJointEnterprise.Contracts\ForkJointEnterprise.Contracts.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Include="Components\Consumers\" />
+        <Folder Include="Modules\" />
+    </ItemGroup>
+
+</Project>

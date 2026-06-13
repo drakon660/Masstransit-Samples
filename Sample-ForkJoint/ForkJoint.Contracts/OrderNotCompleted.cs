@@ -1,6 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-
-namespace ForkJoint.Contracts;
+﻿namespace ForkJoint.Contracts;
 
 public interface OrderNotCompleted
 {
@@ -9,10 +7,4 @@ public interface OrderNotCompleted
     string Reason { get; }
 
     Burger[] Burgers { get; }
-
-    [ModuleInitializer]
-    internal static void Init()
-    {
-        GlobalTopology.Send.UseCorrelationId<OrderNotCompleted>(x => x.OrderId);
-    }
 }

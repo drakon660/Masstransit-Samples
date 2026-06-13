@@ -1,7 +1,8 @@
-using ForkJoint.Api.Components.Activities.ItineraryPlanners;
-using ForkJoint.Api.Components.Consumers;
-using ForkJoint.Api.Components.StateMachines;
-using ForkJoint.Api.Services;
+using ForkJointEnterprise.Api.Components.Activities.DressBurger;
+using ForkJointEnterprise.Api.Components.Activities.GrillBurger;
+using ForkJointEnterprise.Api.Components.Activities.ItineraryPlanners;
+using ForkJointEnterprise.Api.Components.StateMachines;
+using ForkJointEnterprise.Api.Services;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,19 +17,25 @@ builder.Services.TryAddSingleton<IGrill, Grill>();
 builder.Services.AddMassTransit(x =>
 {
     x.DisableUsageTelemetry();
-    
-    x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("fork-joint", false));
-    x.AddConsumersFromNamespaceContaining<SubmitOrderConsumer>();
-    x.AddActivitiesFromNamespaceContaining<ForkJoint.Api.Components.Activities.CourierActivities>();
+    x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("fork-joint-enterprise", false));
+
+    // Activities
+    x.AddActivity<GrillBurgerActivity, GrillBurgerArguments, GrillBurgerLog>();
     x.AddExecuteActivity<DressBurgerActivity, DressBurgerArguments>();
 
+    // Sagas
     x.AddSagaStateMachine<BurgerStateMachine, BurgerState, BurgerSagaDefinition>()
         .InMemoryRepository();
+
+    x.AddSagaStateMachine<OrderStateMachine, OrderState, OrderSagaDefinition>()
+        .InMemoryRepository();
+
+    // Bridges sagas using .RequestStarted() / .RequestCompleted() back to IRequestClient callers
     x.AddSagaStateMachine<MassTransit.Components.RequestStateMachine, MassTransit.Components.RequestState, RequestSagaDefinition>()
         .InMemoryRepository();
-    
+
+    // Request clients
     x.AddRequestClient<SubmitOrder>();
-    x.AddRequestClient<RequestBurger>();
 
     x.UsingRabbitMq((context, cfg) =>
     {
@@ -46,7 +53,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "ForkJoint API v1");
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "ForkJointEnterprise API v1");
     });
 }
 

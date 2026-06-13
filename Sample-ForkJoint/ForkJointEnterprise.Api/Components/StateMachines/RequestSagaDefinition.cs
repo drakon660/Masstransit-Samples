@@ -1,0 +1,27 @@
+using MassTransit.Components;
+using MassTransit.Contracts;
+using MassTransit.Middleware;
+
+namespace ForkJointEnterprise.Api.Components.StateMachines;
+
+public class RequestSagaDefinition :
+    SagaDefinition<RequestState>
+{
+    public RequestSagaDefinition()
+    {
+        ConcurrentMessageLimit = 64;
+    }
+
+    protected override void ConfigureSaga(IReceiveEndpointConfigurator endpointConfigurator,
+        ISagaConfigurator<RequestState> sagaConfigurator,
+        IRegistrationContext context)
+    {
+        var partitionCount = ConcurrentMessageLimit ?? Environment.ProcessorCount * 4;
+
+        IPartitioner partitioner = new Partitioner(partitionCount, new Murmur3UnsafeHashGenerator());
+
+        endpointConfigurator.UsePartitioner<RequestStarted>(partitioner, x => x.Message.RequestId);
+        endpointConfigurator.UsePartitioner<RequestCompleted>(partitioner, x => x.Message.CorrelationId);
+        endpointConfigurator.UsePartitioner<RequestFaulted>(partitioner, x => x.Message.CorrelationId);
+    }
+}

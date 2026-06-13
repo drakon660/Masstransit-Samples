@@ -2,6 +2,8 @@ namespace ForkJoint.Api.Modules;
 
 public record SubmitOrderRequest(Guid OrderId, bool Lettuce);
 
+public record OrderResultDto(Guid OrderId, Burger[] LinesCompleted, Burger[] LinesFaulted, string? Reason);
+
 // POST /orders → IRequestClient<SubmitOrder> → SubmitOrderConsumer (RoutingSlipRequestConsumer<SubmitOrder>).
 // The consumer builds a routing slip via BurgerItineraryPlanner and executes activities (grill, dress).
 // Response (OrderCompleted / OrderNotCompleted) is sent back by SubmitOrderResponseConsumer
@@ -22,19 +24,24 @@ public class SubmitOrderModule : ICarterModule
                 new
                 {
                     OrderId = orderId,
-                    Burgers = new[] { new Burger { Lettuce = request.Lettuce } }
+                    Burgers = new[] { new Burger { BurgerId = NewId.NextGuid(), Lettuce = request.Lettuce } }
                 }, cancellationToken);
 
             if (response.Is<OrderCompleted>(out var completed))
-                return Results.Ok(completed.Message);
+                return Results.Ok(new OrderResultDto(
+                    completed.Message.OrderId,
+                    LinesCompleted: new[] { completed.Message.Burger },
+                    LinesFaulted: Array.Empty<Burger>(),
+                    Reason: null));
 
             if (response.Is<OrderNotCompleted>(out var notCompleted))
-                return Results.Problem(
-                    title: "Order not completed",
-                    detail: notCompleted.Message.Reason,
-                    statusCode: StatusCodes.Status422UnprocessableEntity);
+                return Results.Ok(new OrderResultDto(
+                    notCompleted.Message.OrderId,
+                    LinesCompleted: Array.Empty<Burger>(),
+                    LinesFaulted: notCompleted.Message.Burgers ?? Array.Empty<Burger>(),
+                    Reason: notCompleted.Message.Reason));
 
-            return Results.Problem("Unexpected response", statusCode: StatusCodes.Status500InternalServerError);
+            return Results.Ok(new OrderResultDto(orderId, Array.Empty<Burger>(), Array.Empty<Burger>(), "Unexpected response"));
         });
     }
 }

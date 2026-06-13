@@ -1,4 +1,6 @@
-﻿namespace ForkJoint.Contracts;
+﻿using System.Runtime.CompilerServices;
+
+namespace ForkJointEnterprise.Contracts;
 
 public interface SubmitOrder
 {
