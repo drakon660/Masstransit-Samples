@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="AwesomeAssertions" />
+        <PackageReference Include="coverlet.collector"/>
+        <PackageReference Include="MassTransit.TestFramework" />
+        <PackageReference Include="coverlet.collector" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="Meziantou.Extensions.Logging.Xunit.v3" />
+        <PackageReference Include="xunit.v3"  />
+        <PackageReference Include="xunit.runner.visualstudio"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="Xunit"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\ForkJointEnterprise.Api\ForkJointEnterprise.Api.csproj" />
+      <ProjectReference Include="..\ForkJointEnterprise.Contracts\ForkJointEnterprise.Contracts.csproj" />
+    </ItemGroup>
+
+</Project>

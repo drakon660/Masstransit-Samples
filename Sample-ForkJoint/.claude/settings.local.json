@@ -20,7 +20,8 @@
       "Bash(tree \"F:\\\\src\\\\Masstransit-Samples\\\\Sample-ForkJoint\\\\old\" -I \"bin|obj\")",
       "Read(//tmp/**)",
       "Bash(dotnet list *)",
-      "Bash(dotnet tool *)"
+      "Bash(dotnet tool *)",
+      "Bash(dotnet test *)"
     ]
   },
   "enabledMcpjsonServers": [
